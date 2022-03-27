@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  nestjs_api:
+    container_name: nestjs_api
+    build:
+      context: .
+    ports:
+      - 4200:4200
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    # networks:
+    #   - app 
+
+  mongodb:
+    image : mongo:5.0.6
+    container_name: mongodb
+    volumes:
+      - mongo_db:/data/db
+    ports:
+      - 27017:27017
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+    # networks: 
+    #   - app
+
+# networks:
+#   app:
+#     driver: bridge
+
+volumes:
+  mongo_db:
