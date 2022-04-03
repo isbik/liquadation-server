@@ -1,24 +1,22 @@
-import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
-export type ContactApplicationDocument = ContactApplication & Document;
-
-@Schema()
+@Entity()
 export class ContactApplication {
-  @Prop()
+  @PrimaryKey()
+  id: number;
+
+  @Property()
   email: string;
 
-  @Prop()
-  phone: number;
+  @Property()
+  phone: string;
 
-  @Prop()
+  @Property()
   fio: string;
 
-  @Prop()
+  @Property()
   comment: string;
 
-  @Prop({ default: Date.now() })
-  createdAt: Date;
+  @Property()
+  createdAt = new Date();
 }
-
-export const ContactApplicationSchema =
-  SchemaFactory.createForClass(ContactApplication);

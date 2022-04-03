@@ -1,55 +1,66 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Transform } from 'class-transformer';
-import { Document, ObjectId } from 'mongoose';
+import { Entity, Enum, PrimaryKey, Property } from '@mikro-orm/core';
 
-export type UserDocument = User & Document;
-
-@Schema()
-export class User {
-  @Transform(({ value }) => value.toString())
-  _id: ObjectId;
-
-  @Prop()
-  organizationName: string;
-
-  @Prop()
-  INN: number;
-
-  @Prop()
-  ORGN: string;
-
-  @Prop()
-  city: string;
-
-  @Prop()
-  factAddress: string;
-
-  @Prop()
-  legalAddress: string;
-
-  @Prop()
-  postalCode: string;
-
-  @Prop()
-  phone: string;
-
-  @Prop()
-  email: string;
-
-  @Prop()
-  fio: string;
-
-  @Prop()
-  position: string;
-
-  @Prop()
-  directorPhone: string;
-
-  @Prop()
-  directorEmail: string;
-
-  @Prop()
-  password: string;
+export enum UserEmailStatus {
+  active = 'active',
+  blocked = 'blocked',
+  verification = 'verification',
 }
 
-export const UserSchema = SchemaFactory.createForClass(User);
+export enum UserRole {
+  user = 'user',
+  admin = 'admin',
+}
+
+@Entity()
+export class User {
+  @PrimaryKey()
+  id: number;
+
+  @Property()
+  organizationName: string;
+
+  @Property()
+  INN: string;
+
+  @Property()
+  ORGN: string;
+
+  @Property()
+  city: string;
+
+  @Property()
+  factAddress: string;
+
+  @Property()
+  legalAddress: string;
+
+  @Property()
+  postalCode: string;
+
+  @Property()
+  phone: string;
+
+  @Property()
+  email: string;
+
+  @Property()
+  fio: string;
+
+  @Property()
+  position: string;
+
+  @Property()
+  directorPhone: string;
+
+  @Property()
+  directorEmail: string;
+
+  @Enum(() => UserEmailStatus)
+  emailStatus: UserEmailStatus;
+
+  @Property()
+  password: string;
+
+  @Enum({ default: UserRole.user })
+  role: UserRole;
+}

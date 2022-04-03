@@ -1,45 +1,64 @@
+import { EntityRepository } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { CreateUserDto } from './dto/create-user.dto';
-import { User, UserDocument } from './entities/user.entity';
-import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
+import { paginated } from 'src/lib/Paginated';
 import { PasswordChangeDto } from '../authentication/dto/password-change.dto';
 import { EmailService } from '../email/email.service';
-import * as jwt from 'jsonwebtoken';
+import { ChangeUserStatusDto } from './dto/change-user-status.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { GetUsersDto } from './dto/get-user.dto';
+import { User, UserEmailStatus } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly emailService: EmailService,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectRepository(User)
+    private readonly usersRepository: EntityRepository<User>,
   ) {}
 
-  async findByPhoneOrEmail(phoneOrEmail: string): Promise<User | null> {
-    const user = await this.userModel.findOne({
-      $or: [{ phone: phoneOrEmail }, { email: phoneOrEmail }],
-    });
-    if (user) {
-      return user;
-    }
+  async find(filters: GetUsersDto) {
+    return paginated<User>(this.usersRepository, filters);
+  }
 
-    return null;
+  async findByPhoneOrEmail(phoneOrEmail: string): Promise<User | null> {
+    try {
+      const user = await this.usersRepository.findOne({
+        email: phoneOrEmail,
+      });
+      if (user) {
+        return user;
+      }
+    } catch (error) {
+      return null;
+    }
   }
 
   async create(userData: CreateUserDto) {
-    const newUser = await this.userModel.create(userData);
-    return newUser;
+    const user = this.usersRepository.create({
+      ...userData,
+      emailStatus: UserEmailStatus.verification,
+    });
+
+    await this.usersRepository.persistAndFlush(user);
+
+    return user;
   }
 
-  async getById(id: string) {
-    const user = await this.userModel.findById(id);
-    if (user) {
-      return user;
+  async getById(id: number) {
+    try {
+      const user = await this.usersRepository.findOne({ id });
+      if (user) {
+        return user;
+      }
+    } catch (error) {
+      throw new HttpException(
+        'User with this id does not exist',
+        HttpStatus.NOT_FOUND,
+      );
     }
-    throw new HttpException(
-      'User with this id does not exist',
-      HttpStatus.NOT_FOUND,
-    );
   }
 
   public async verifyPassword(plainPassword: string, hashedPassword: string) {
@@ -56,8 +75,8 @@ export class UsersService {
     }
   }
 
-  async changePassword(id: string, passwordData: PasswordChangeDto) {
-    const user = await this.userModel.findById(id);
+  async changePassword(id: number, passwordData: PasswordChangeDto) {
+    const user = await this.usersRepository.findOne({ id });
 
     if (!user) {
       throw new HttpException(
@@ -69,7 +88,7 @@ export class UsersService {
     try {
       await this.verifyPassword(passwordData.oldPassword, user.password);
       user.password = await bcrypt.hash(passwordData.newPassword, 10);
-      await user.save();
+      await this.usersRepository.persistAndFlush(user);
     } catch (error) {
       throw new HttpException(error.message, error.status);
     }
@@ -97,7 +116,7 @@ export class UsersService {
       );
     }
 
-    const user = await this.userModel.findOne({
+    const user = await this.usersRepository.findOne({
       email: payload.email,
     });
 
@@ -108,8 +127,17 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     user.password = hashedPassword;
-    user.save();
+
+    this.usersRepository.persistAndFlush(user);
 
     return 'OK';
+  }
+
+  async changeEmailStatus(data: ChangeUserStatusDto) {
+    data.ids.map((id) => {
+      this.usersRepository.nativeUpdate({ id }, { emailStatus: data.status });
+    });
+
+    this.usersRepository.flush();
   }
 }

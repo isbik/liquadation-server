@@ -8,13 +8,13 @@ export class CreateUserDto {
   @Matches(/^\d{10}|\d{12}$/, {
     message: 'Введите корректный ИНН',
   })
-  INN: number;
+  INN: string;
 
   @IsDefined()
   @Matches(/\d{4}[\dA-Z][\dA-Z]\d{3}/, {
     message: 'Введите корректный КПП',
   })
-  KPP: number;
+  KPP: string;
 
   @IsDefined()
   ORGN: string;

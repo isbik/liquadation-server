@@ -1,17 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { EntityRepository, Loaded } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as S3 from 'aws-sdk/clients/s3';
-import { CloudFile, CloudFileDocument } from './entities/cloud-file.entity';
-import { Model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-
-const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
+import { User } from '../users/entities/user.entity';
+import { CloudFile } from './entities/cloud-file.entity';
 
 @Injectable()
 export class CloudStorageService {
   constructor(
-    @InjectModel(CloudFile.name)
-    private cloudFileModel: Model<CloudFileDocument>,
+    @InjectRepository(CloudFile)
+    private readonly cloudFileRepository: EntityRepository<CloudFile>,
   ) {}
 
   private readonly s3 = new S3({
@@ -23,34 +22,37 @@ export class CloudStorageService {
     apiVersion: 'latest',
   });
 
-  async createFile(file, data) {
-    return this.cloudFileModel.create({
+  private getFileParams(file: Express.Multer.File) {
+    return {
+      Bucket: 'liquadation',
+      Key: uuidv4() + '_' + file.originalname,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    };
+  }
+
+  async createFile(file, data, user: User) {
+    const cloudFile = this.cloudFileRepository.create({
       mimetype: file.mimetype,
       url:
         'https://api.selcdn.ru/v1/SEL_207085/' + data.Bucket + '/' + data.Key,
       filename: file.originalname,
       key: data.Key,
+      owner: user,
     });
+
+    await this.cloudFileRepository.persistAndFlush(cloudFile);
+
+    return cloudFile;
   }
 
-  uploadImage(file: Express.Multer.File): Promise<CloudFile> {
+  uploadImage(file: Express.Multer.File, user: User): Promise<CloudFile> {
     return new Promise((resolve, reject) => {
-      if (!IMAGE_TYPES.includes(file.mimetype)) {
-        reject('Неверное расширение изображение');
-      }
-
-      const params = {
-        Bucket: 'liquadation',
-        Key: uuidv4() + '_' + file.originalname,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      };
-
-      this.s3.upload(params, async (err, data) => {
+      this.s3.upload(this.getFileParams(file), async (err, data) => {
         if (err) reject(err);
         else {
           try {
-            const cloudStorageFile = await this.createFile(file, data);
+            const cloudStorageFile = this.createFile(file, data, user);
             resolve(cloudStorageFile);
           } catch (error) {
             reject(error);
@@ -60,18 +62,18 @@ export class CloudStorageService {
     });
   }
 
-  uploadFile(file: Express.Multer.File) {
-    console.log('file: ', file.mimetype);
+  uploadFile(file: Express.Multer.File, user: User): Promise<CloudFile> {
     return new Promise((resolve, reject) => {
-      const params = {
-        Bucket: 'liquadation',
-        Key: uuidv4() + '_' + file.originalname,
-        Body: file.buffer,
-      };
-
-      this.s3.upload(params, (err, data) => {
+      this.s3.upload(this.getFileParams(file), async (err, data) => {
         if (err) reject(err);
-        else resolve(data);
+        else {
+          try {
+            const cloudStorageFile = this.createFile(file, data, user);
+            resolve(cloudStorageFile);
+          } catch (error) {
+            reject(error);
+          }
+        }
       });
     });
   }
@@ -80,7 +82,7 @@ export class CloudStorageService {
     return new Promise((resolve, reject) => {
       const params = {
         Bucket: 'liquadation',
-        Key: key
+        Key: key,
       };
 
       this.s3.deleteObject(params, (err, data) => {
@@ -88,5 +90,36 @@ export class CloudStorageService {
         else resolve(data);
       });
     });
+  }
+
+  async findById(id: number) {
+    try {
+      const file = await this.cloudFileRepository.findOneOrFail({ id });
+      return file;
+    } catch (error) {
+      throw new HttpException('File not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async findByIds(ids: number[]): Promise<Loaded<CloudFile, never>[]> {
+    try {
+      const files = await this.cloudFileRepository.find({
+        id: ids,
+      });
+      return files;
+    } catch (error) {
+      throw new HttpException('File not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async deleteById(id: number) {
+    try {
+      const file = await this.cloudFileRepository.findOne({ id });
+      await this.cloudFileRepository.nativeDelete(file.id);
+      await this.deleteFile(file.key);
+      return file;
+    } catch (error) {
+      throw new HttpException('File not found', HttpStatus.NOT_FOUND);
+    }
   }
 }

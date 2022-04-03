@@ -1,21 +1,21 @@
 import {
-  Controller,
-  Post,
   Body,
-  HttpCode,
-  Req,
-  UseGuards,
-  Res,
+  Controller,
   Get,
+  HttpCode,
+  Post,
   Query,
+  Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
+import JwtAuthenticationGuard from '../../shared/guards/jwt-authentication.guard';
+import { LocalAuthenticationGuard } from '../../shared/guards/local-authentication.guard';
 import { UsersService } from '../users/users.service';
 import { AuthenticationService } from './authentication.service';
 import { PasswordChangeDto } from './dto/password-change.dto';
 import { RegisterDto } from './dto/register-authentication.dto';
-import JwtAuthenticationGuard from './jwt-authentication.guard';
-import { LocalAuthenticationGuard } from './local-authentication.guard';
 import RequestWithUser from './request-with-user.interface';
 
 @Controller('auth')
@@ -43,9 +43,7 @@ export class AuthenticationController {
   @Post('login')
   async logIn(@Req() request: RequestWithUser, @Res() response: Response) {
     const { user } = request;
-    const cookie = this.authenticationService.getCookieWithJwtToken(
-      user._id.toString(),
-    );
+    const cookie = this.authenticationService.getCookieWithJwtToken(user.id);
     response.setHeader('Set-Cookie', cookie);
     user.password = undefined;
     return response.send(user);
@@ -68,7 +66,7 @@ export class AuthenticationController {
     @Body() passwordData: PasswordChangeDto,
   ) {
     const { user } = request;
-    return this.userService.changePassword(user._id.toString(), passwordData);
+    return this.userService.changePassword(user.id, passwordData);
   }
 
   @Post('password/recover')

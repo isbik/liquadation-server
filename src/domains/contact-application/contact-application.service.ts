@@ -1,24 +1,43 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { paginated } from '@/lib/Paginated';
+import { EntityRepository } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateContactApplicationDto } from './dto/create-contact-application.dto';
-import {
-  ContactApplication,
-  ContactApplicationDocument,
-} from './entities/contact-application.entity';
-import { Model } from 'mongoose';
+import { ContactApplication } from './entities/contact-application.entity';
 
 @Injectable()
 export class ContactApplicationService {
   constructor(
-    @InjectModel(ContactApplication.name)
-    private contactApplicationModel: Model<ContactApplicationDocument>,
+    @InjectRepository(ContactApplication)
+    private readonly contactApplicationRepository: EntityRepository<ContactApplication>,
   ) {}
 
-  create(createContactApplicationDto: CreateContactApplicationDto) {
-    return this.contactApplicationModel.create(createContactApplicationDto);
+  async create(createContactApplicationDto: CreateContactApplicationDto) {
+    try {
+      const contactApplication = this.contactApplicationRepository.create(
+        createContactApplicationDto,
+      );
+
+      await this.contactApplicationRepository.persistAndFlush(
+        contactApplication,
+      );
+    } catch (error) {
+      console.log('error: ', error);
+      throw new HttpException(
+        "cound'n t create application",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return 'Ok';
+  }
+
+  delete(id: number) {
+    const contractApplication = this.contactApplicationRepository.find({ id });
+    this.contactApplicationRepository.remove(contractApplication);
   }
 
   findAll() {
-    return this.contactApplicationModel.find();
+    return paginated(this.contactApplicationRepository);
   }
 }

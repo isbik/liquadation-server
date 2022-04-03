@@ -1,11 +1,15 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsPositive, IsString, MinLength } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
   @MinLength(2)
   name: string;
 
-  @IsString()
+  @IsPositive()
   @IsOptional()
-  categoryId: string;
+  categoryId: number;
+
+  @IsPositive()
+  @IsOptional()
+  imageId: number;
 }

@@ -11,7 +11,9 @@ describe('ContactApplicationController', () => {
       providers: [ContactApplicationService],
     }).compile();
 
-    controller = module.get<ContactApplicationController>(ContactApplicationController);
+    controller = module.get<ContactApplicationController>(
+      ContactApplicationController,
+    );
   });
 
   it('should be defined', () => {

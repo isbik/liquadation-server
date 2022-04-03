@@ -1,16 +1,16 @@
+import { AdminGuard } from '@/shared/guards/jwt-authentication.guard.1';
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UploadedFile,
-  UseInterceptors,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import JwtAuthenticationGuard from '../../shared/guards/jwt-authentication.guard';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -20,36 +20,33 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('image'))
-  create(
-    @UploadedFile() image: Express.Multer.File,
-    @Body() createCategoryDto: CreateCategoryDto,
-  ) {
-    return this.categoriesService.create(createCategoryDto, image);
+  @UseGuards(AdminGuard)
+  create(@Body() createCategoryDto: CreateCategoryDto) {
+    return this.categoriesService.create(createCategoryDto);
   }
 
   @Get()
-  findAll(@Query('parentCategoryId') parentCategoryId: string) {
-    return this.categoriesService.findAll(parentCategoryId);
+  findAll(@Query() query: Record<string, any>) {
+    return this.categoriesService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: number) {
     return this.categoriesService.findOne(id);
   }
 
+  @UseGuards(JwtAuthenticationGuard)
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('image'))
   update(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() updateCategoryDto: UpdateCategoryDto,
-    @UploadedFile() image: Express.Multer.File,
   ) {
-    return this.categoriesService.update(id, updateCategoryDto, image);
+    return this.categoriesService.update(id, updateCategoryDto);
   }
 
+  @UseGuards(JwtAuthenticationGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: number) {
     return this.categoriesService.remove(id);
   }
 }

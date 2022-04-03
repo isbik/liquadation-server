@@ -12,28 +12,24 @@ services:
       - /usr/src/app/node_modules
     restart: unless-stopped
     depends_on:
-      - mongodb
-    # networks:
-    #   - app 
-
-  mongodb:
-    image : mongo:5.0.6
-    container_name: mongodb
-    volumes:
-      - mongo_db:/data/db
-    ports:
-      - 27017:27017
+      - postgres
+    networks:
+      - app 
+  postgres:
+    image: postgres:14.1-alpine
     restart: always
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
-    # networks: 
-    #   - app
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+    ports:
+      - 5432:5432
+    volumes: 
+      - postgres_db:/var/lib/postgresql/data
 
-# networks:
-#   app:
-#     driver: bridge
+networks:
+  app:
+    driver: bridge
 
 volumes:
-  mongo_db:
+  postgres_db:

@@ -14,7 +14,7 @@ export class CreateContactApplicationDto {
   @Matches(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/, {
     message: 'Введите корректный номер',
   })
-  phone: number;
+  phone: string;
 
   @IsString()
   @MinLength(8)

@@ -1,14 +1,55 @@
-import { IsPositive, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsPositive, IsString, MaxLength } from 'class-validator';
+import { Condition, Supplier, UnitType } from '../entities/product.entity';
 
 export class CreateProductDto {
   @IsString()
-  @MinLength(5)
   name: string;
+
+  @IsString()
+  shortDescription: string;
+
+  @IsString()
+  description: string;
+
+  @IsPositive()
+  categoryId: number;
+
+  @IsPositive()
+  subCategoryId: number;
+
+  @IsString()
+  seller: string;
+
+  @IsEnum(Condition)
+  condition: Condition;
 
   @IsPositive()
   price: number;
 
+  @IsPositive()
+  minRate: number;
+
+  @IsPositive()
+  recommendedRetailPrice: number;
+
+  @IsPositive()
+  quantity: number;
+
+  @IsPositive()
+  totalWeight: number;
+
+  @IsEnum(UnitType)
+  unitType: UnitType;
+
   @IsString()
-  @MinLength(10)
-  description: string;
+  location: string;
+
+  @IsEnum(Supplier)
+  supplier: Supplier;
+
+  @MaxLength(8, { each: true })
+  imageIds: number[];
+
+  @IsPositive()
+  manifestoFileId: number;
 }

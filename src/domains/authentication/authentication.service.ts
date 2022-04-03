@@ -1,9 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register-authentication.dto';
 import TokenPayload from './token-payload.interface';
-import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthenticationService {
@@ -31,8 +31,6 @@ export class AuthenticationService {
         ...registrationData,
         password: hashedPassword,
       });
-
-      createdUser.password = undefined;
 
       return createdUser;
     } catch (error) {
@@ -77,7 +75,7 @@ export class AuthenticationService {
     }
   }
 
-  public getCookieWithJwtToken(userId: string) {
+  public getCookieWithJwtToken(userId: number) {
     const payload: TokenPayload = { userId };
     const token = this.jwtService.sign(payload);
     return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${process.env.JWT_EXPIRATION_TIME}`;

@@ -1,32 +1,27 @@
+import { paginated } from '@/lib/Paginated';
+import { EntityRepository } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import {
-  Category,
-  CategoryDocument,
-  CategorySchema,
-} from './entities/category.entity';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
+import { Category } from './entities/category.entity';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     private readonly cloudStorageService: CloudStorageService,
-    @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: EntityRepository<Category>,
   ) {}
-  async create(
-    createCategoryDto: CreateCategoryDto,
-    image?: Express.Multer.File,
-  ) {
-    const category = new this.categoryModel(createCategoryDto);
+  async create(createCategoryDto: CreateCategoryDto) {
+    const category = this.categoryRepository.create(createCategoryDto);
 
     if (createCategoryDto.categoryId) {
       try {
-        const parentCategory = await this.categoryModel.findById(
-          createCategoryDto.categoryId,
-        );
+        const parentCategory = await this.categoryRepository.findOne({
+          id: createCategoryDto.categoryId,
+        });
 
         if (!parentCategory) {
           throw new HttpException(
@@ -34,34 +29,42 @@ export class CategoriesService {
             HttpStatus.NOT_FOUND,
           );
         }
-        category.parentCategory = parentCategory.id;
+        category.parentCategory = parentCategory;
       } catch (error) {
         throw new HttpException('Server error', HttpStatus.BAD_REQUEST);
       }
     }
 
-    if (image) {
-      const uploaded = await this.cloudStorageService.uploadImage(image);
-      category.image = uploaded;
+    if (createCategoryDto.imageId) {
+      const image = await this.cloudStorageService.findById(
+        createCategoryDto.imageId,
+      );
+
+      category.image = image;
     }
 
-    await category.save();
+    await this.categoryRepository.persistAndFlush(category);
 
     return category;
   }
 
-  findAll(parentCategoryId?: string) {
-    return this.categoryModel
-      .find({
-        parentCategory: parentCategoryId || null,
-      })
-      .populate('parentCategory', '', Category.name);
+  findAll(filters) {
+    const where = { ...filters };
+
+    if (where.parentCategory === 'null') {
+      where.parentCategory = null;
+    }
+
+    return paginated<Category>(this.categoryRepository, where, {
+      populate: ['parentCategory', 'image'],
+    });
   }
 
-  async findOne(id: string) {
-    const category = await this.categoryModel
-      .findById(id)
-      .populate('parentCategory', '', Category.name);
+  async findOne(id: number) {
+    const category = await this.categoryRepository.findOne(
+      { id },
+      { populate: ['parentCategory'] },
+    );
 
     if (!category) {
       throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
@@ -70,12 +73,11 @@ export class CategoriesService {
     return category;
   }
 
-  async update(
-    id: string,
-    updateCategoryDto: UpdateCategoryDto,
-    image: Express.Multer.File,
-  ) {
-    const category = await this.categoryModel.findById(id);
+  async update(id: number, updateCategoryDto: UpdateCategoryDto) {
+    const category = await this.categoryRepository.findOne(
+      { id },
+      { populate: ['image'] },
+    );
 
     if (!category) {
       throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
@@ -85,9 +87,9 @@ export class CategoriesService {
 
     if (updateCategoryDto.categoryId) {
       try {
-        const parentCategory = await this.categoryModel.findById(
-          updateCategoryDto.categoryId,
-        );
+        const parentCategory = await this.categoryRepository.findOne({
+          id: updateCategoryDto.categoryId,
+        });
 
         if (!parentCategory) {
           throw new HttpException(
@@ -95,30 +97,44 @@ export class CategoriesService {
             HttpStatus.NOT_FOUND,
           );
         }
-        category.parentCategory = parentCategory.id;
+        category.parentCategory = parentCategory;
       } catch (error) {
         throw new HttpException('Server error', HttpStatus.BAD_REQUEST);
       }
     }
 
-    if (image) {
-      const uploaded = await this.cloudStorageService.uploadImage(image);
-      category.image = uploaded;
+    if (updateCategoryDto.imageId) {
+      const image = await this.cloudStorageService.findById(
+        updateCategoryDto.imageId,
+      );
+
+      category.image = image;
+    } else if (category.image?.id) {
+      await this.cloudStorageService.deleteById(category.image.id);
+      category.image = null;
     }
 
-    await category.save();
+    await this.categoryRepository.persistAndFlush(category);
 
-    return category;
+    return {
+      ...category,
+      image: category.image,
+      parentCategory: category.parentCategory,
+    };
   }
 
-  async remove(id: string) {
-    const category = await this.categoryModel.findById(id);
+  async remove(id: number) {
+    const category = await this.categoryRepository.findOne(
+      { id },
+      { populate: ['image'] },
+    );
 
     if (!category) {
       throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
     }
 
     if (category.image) {
+      console.log('category.image: ', category.image);
       try {
         await this.cloudStorageService.deleteFile(category.image.key);
       } catch (error) {
@@ -129,7 +145,7 @@ export class CategoriesService {
       }
     }
 
-    await category.delete();
+    await this.categoryRepository.removeAndFlush(category);
 
     return { deleted: category.id };
   }

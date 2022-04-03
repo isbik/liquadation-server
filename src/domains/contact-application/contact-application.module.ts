@@ -1,18 +1,11 @@
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
-import { ContactApplicationService } from './contact-application.service';
 import { ContactApplicationController } from './contact-application.controller';
-import { MongooseModule } from '@nestjs/mongoose';
-import {
-  ContactApplication,
-  ContactApplicationSchema,
-} from './entities/contact-application.entity';
+import { ContactApplicationService } from './contact-application.service';
+import { ContactApplication } from './entities/contact-application.entity';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: ContactApplication.name, schema: ContactApplicationSchema },
-    ]),
-  ],
+  imports: [MikroOrmModule.forFeature([ContactApplication])],
   controllers: [ContactApplicationController],
   providers: [ContactApplicationService],
 })

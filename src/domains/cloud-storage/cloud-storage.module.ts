@@ -1,14 +1,12 @@
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { CloudStorageController } from './cloud-storage.controller';
 import { CloudStorageService } from './cloud-storage.service';
-import { CloudFile, CloudFileSchema } from './entities/cloud-file.entity';
+import { CloudFile } from './entities/cloud-file.entity';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: CloudFile.name, schema: CloudFileSchema },
-    ]),
-  ],
+  imports: [MikroOrmModule.forFeature([CloudFile])],
+  controllers: [CloudStorageController],
   providers: [CloudStorageService],
 })
 export class CloudStorageModule {}

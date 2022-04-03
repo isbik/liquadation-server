@@ -1,5 +1,4 @@
-import { Transform } from 'class-transformer';
-import { IsDefined, Matches, IsPhoneNumber } from 'class-validator';
+import { IsDefined, Matches } from 'class-validator';
 
 export class RegisterDto {
   @IsDefined()
@@ -9,13 +8,13 @@ export class RegisterDto {
   @Matches(/^\d{10}|\d{12}$/, {
     message: 'Введите корректный ИНН',
   })
-  INN: number;
+  INN: string;
 
   @IsDefined()
   @Matches(/\d{4}[\dA-Z][\dA-Z]\d{3}/, {
     message: 'Введите корректный КПП',
   })
-  KPP: number;
+  KPP: string;
 
   @IsDefined()
   ORGN: string;

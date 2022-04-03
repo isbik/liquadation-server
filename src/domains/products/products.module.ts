@@ -1,14 +1,16 @@
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
-import { ProductsService } from './products.service';
+import { CategoriesService } from '../categories/categories.service';
+import { Category } from '../categories/entities/category.entity';
+import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
+import { CloudFile } from '../cloud-storage/entities/cloud-file.entity';
+import { Product } from './entities/product.entity';
 import { ProductsController } from './products.controller';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Product, ProductSchema } from './entities/product.entity';
+import { ProductsService } from './products.service';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
-  ],
+  imports: [MikroOrmModule.forFeature([Product, CloudFile, Category])],
   controllers: [ProductsController],
-  providers: [ProductsService],
+  providers: [ProductsService, CloudStorageService, CategoriesService],
 })
 export class ProductsModule {}

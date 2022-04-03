@@ -1,24 +1,17 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Type } from 'class-transformer';
-import { Document, ObjectId, Schema as MongooseSchema } from 'mongoose';
-import {
-  CloudFile,
-  CloudFileSchema,
-} from 'src/domains/cloud-storage/entities/cloud-file.entity';
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { CloudFile } from 'src/domains/cloud-storage/entities/cloud-file.entity';
 
-export type CategoryDocument = Category & Document;
-
-@Schema()
+@Entity()
 export class Category {
-  @Prop()
+  @PrimaryKey()
+  id: number;
+
+  @Property()
   name: string;
 
-  @Prop({ type: CloudFileSchema })
-  @Type(() => CloudFile)
+  @ManyToOne({ nullable: true, primary: false })
   image: CloudFile;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: () => Category })
-  parentCategory: ObjectId;
+  @ManyToOne({ nullable: true, primary: false })
+  parentCategory: Category;
 }
-
-export const CategorySchema = SchemaFactory.createForClass(Category);

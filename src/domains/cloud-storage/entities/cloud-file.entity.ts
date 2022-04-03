@@ -1,25 +1,25 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Transform } from 'class-transformer';
-import { ObjectId, Document } from 'mongoose';
-
-export type CloudFileDocument = CloudFile & Document;
-
-@Schema()
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { User } from '../../users/entities/user.entity';
+@Entity()
 export class CloudFile {
-  @Transform(({ value }) => value.toString())
-  _id: ObjectId;
+  @PrimaryKey()
+  id: number;
 
-  @Prop()
+  @Property()
   filename: string;
 
-  @Prop()
+  @Property()
   url: string;
 
-  @Prop()
+  @Property()
   mimetype: string;
 
-  @Prop()
+  @Property()
   key: string;
-}
 
-export const CloudFileSchema = SchemaFactory.createForClass(CloudFile);
+  @ManyToOne()
+  owner: User;
+
+  @Property({ default: false })
+  active: boolean;
+}

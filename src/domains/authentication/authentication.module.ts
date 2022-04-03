@@ -1,18 +1,18 @@
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
-import { AuthenticationService } from './authentication.service';
-import { AuthenticationController } from './authentication.controller';
-import { UsersService } from '../users/users.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from '../users/entities/user.entity';
+import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { LocalStrategy } from './local.strategy';
-import { JwtModule, JwtService } from '@nestjs/jwt';
-import { JwtStrategy } from './jwt.strategy';
 import { EmailService } from '../email/email.service';
+import { User } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { AuthenticationController } from './authentication.controller';
+import { AuthenticationService } from './authentication.service';
+import { JwtStrategy } from './jwt.strategy';
+import { LocalStrategy } from './local.strategy';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MikroOrmModule.forFeature([User]),
     PassportModule,
     JwtModule.registerAsync({
       useFactory: async () => ({
