@@ -399,24 +399,6 @@
       "schema": "public",
       "indexes": [
         {
-          "columnNames": [
-            "image_id"
-          ],
-          "composite": false,
-          "keyName": "category_image_id_unique",
-          "primary": false,
-          "unique": true
-        },
-        {
-          "columnNames": [
-            "parent_category_id"
-          ],
-          "composite": false,
-          "keyName": "category_parent_category_id_unique",
-          "primary": false,
-          "unique": true
-        },
-        {
           "keyName": "category_pkey",
           "columnNames": [
             "id"

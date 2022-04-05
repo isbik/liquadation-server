@@ -22,7 +22,7 @@ export class CloudStorageController {
   @Post('image')
   @UseGuards(JwtAuthenticationGuard)
   @UseInterceptors(FileInterceptor('file'))
-  uploadImage(
+  async uploadImage(
     @Req() request: RequestWithUser,
     @UploadedFile() image: Express.Multer.File,
   ) {
@@ -33,7 +33,10 @@ export class CloudStorageController {
       );
     }
 
-    return this.cloudStorageService.uploadImage(image, request.user);
+    const { owner, ...responseImage } =
+      await this.cloudStorageService.uploadImage(image, request.user);
+
+    return responseImage;
   }
 
   @Post('file')

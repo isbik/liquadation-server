@@ -9,9 +9,14 @@ export class Category {
   @Property()
   name: string;
 
-  @ManyToOne({ nullable: true, primary: false })
+  @ManyToOne({ nullable: true, primary: false, mapToPk: false })
   image: CloudFile;
 
-  @ManyToOne({ nullable: true, primary: false })
+  @ManyToOne({
+    nullable: true,
+    primary: false,
+    mapToPk: false,
+    onDelete: 'cascade',
+  })
   parentCategory: Category;
 }
