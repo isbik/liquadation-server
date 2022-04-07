@@ -1,5 +1,5 @@
 import { paginated } from '@/lib/Paginated';
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, FindOneOptions } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
@@ -60,11 +60,11 @@ export class CategoriesService {
     });
   }
 
-  async findOne(id: number) {
-    const category = await this.categoryRepository.findOne(
-      { id },
-      { populate: ['parentCategory'] },
-    );
+  async findById(
+    id: number,
+    options: FindOneOptions<Category, any> = { populate: ['image'] },
+  ) {
+    const category = await this.categoryRepository.findOne({ id }, options);
 
     if (!category) {
       throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
@@ -73,15 +73,16 @@ export class CategoriesService {
     return category;
   }
 
-  async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const category = await this.categoryRepository.findOne(
-      { id },
-      { populate: ['image'] },
-    );
+  async findOne(id: number) {
+    const category = await this.findById(id, {
+      populate: ['parentCategory', 'image'],
+    });
 
-    if (!category) {
-      throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
-    }
+    return category;
+  }
+
+  async update(id: number, updateCategoryDto: UpdateCategoryDto) {
+    const category = await this.findById(id);
 
     category.name = updateCategoryDto.name;
 
@@ -108,8 +109,11 @@ export class CategoriesService {
         updateCategoryDto.imageId,
       );
 
-      category.image = image;
-    } else if (category.image?.id) {
+      if (image.id !== category.image.id) {
+        category.image.active = false;
+        category.image = image;
+      }
+    } else if (category.image !== null) {
       await this.cloudStorageService.deleteById(category.image.id);
       category.image = null;
     }
@@ -124,14 +128,7 @@ export class CategoriesService {
   }
 
   async remove(id: number) {
-    const category = await this.categoryRepository.findOne(
-      { id },
-      { populate: ['image'] },
-    );
-
-    if (!category) {
-      throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
-    }
+    const category = await this.findById(id);
 
     if (category.image) {
       console.log('category.image: ', category.image);

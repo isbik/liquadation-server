@@ -22,6 +22,9 @@ export class User {
   @Property()
   INN: string;
 
+  @Property({ default: null })
+  KPP: string;
+
   @Property()
   ORGN: string;
 
@@ -58,7 +61,7 @@ export class User {
   @Enum(() => UserEmailStatus)
   emailStatus: UserEmailStatus;
 
-  @Property()
+  @Property({ hidden: true })
   password: string;
 
   @Enum({ default: UserRole.user })
