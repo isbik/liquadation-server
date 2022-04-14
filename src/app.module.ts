@@ -10,6 +10,7 @@ import { OrdersModule } from './domains/orders/orders.module';
 import { PicassoModule } from './domains/picasso/picasso.module';
 import { ProductsModule } from './domains/products/products.module';
 import { UsersModule } from './domains/users/users.module';
+import { FavoritesModule } from './domains/favorites/favorites.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UsersModule } from './domains/users/users.module';
     EmailModule,
     CategoriesModule,
     CloudStorageModule,
+    FavoritesModule,
   ],
 })
 export class AppModule {}

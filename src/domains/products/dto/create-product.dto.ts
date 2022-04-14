@@ -1,4 +1,10 @@
-import { IsEnum, IsPositive, IsString, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsPositive,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { Condition, Supplier, UnitType } from '../entities/product.entity';
 
 export class CreateProductDto {
@@ -50,6 +56,7 @@ export class CreateProductDto {
   @MaxLength(8, { each: true })
   imageIds: number[];
 
+  @IsOptional()
   @IsPositive()
   manifestoFileId: number;
 }

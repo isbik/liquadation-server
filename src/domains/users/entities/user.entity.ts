@@ -1,4 +1,13 @@
-import { Entity, Enum, PrimaryKey, Property } from '@mikro-orm/core';
+import { CloudFile } from '@/domains/cloud-storage/entities/cloud-file.entity';
+import { Product } from '@/domains/products/entities/product.entity';
+import {
+  Collection,
+  Entity,
+  Enum,
+  ManyToMany,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/core';
 
 export enum UserEmailStatus {
   active = 'active',
@@ -66,4 +75,13 @@ export class User {
 
   @Enum({ default: UserRole.user })
   role: UserRole;
+
+  @ManyToMany()
+  favouriteProducts = new Collection<Product>(this);
+
+  @ManyToMany()
+  favouriteOrganizations = new Collection<User>(this);
+
+  @ManyToMany({ nullable: true })
+  avatar: CloudFile;
 }

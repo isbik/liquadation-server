@@ -10,7 +10,7 @@ export const paginated = async <T>(
   where?: Options<T>,
   options?: FindOptions<T, any>,
 ) => {
-  const { offset = 0, limit = 10, ...restWhere } = where;
+  const { offset = 0, limit = 10, ...restWhere } = where || {};
 
   const [items, total] = await model.findAndCount(restWhere as FilterQuery<T>, {
     offset,

@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -26,6 +27,11 @@ export class ProductsController {
     @Body() createProductDto: CreateProductDto,
   ) {
     return this.productsService.create(createProductDto, request.user);
+  }
+
+  @Get()
+  findAll(@Query() query) {
+    return this.productsService.findAll(query);
   }
 
   @Get(':id')

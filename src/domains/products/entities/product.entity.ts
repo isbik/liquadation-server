@@ -115,4 +115,7 @@ export class Product {
 
   @Property({ onUpdate: () => new Date() })
   updatedAt = new Date();
+
+  @ManyToMany()
+  viewers = new Collection<User>(this);
 }

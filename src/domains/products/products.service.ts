@@ -17,6 +17,8 @@ export class ProductsService {
 
     @InjectRepository(Product)
     private readonly productRepository: EntityRepository<Product>,
+    @InjectRepository(User)
+    private readonly userRepository: EntityRepository<User>,
   ) {}
 
   async create(createProductDto: CreateProductDto, user: User) {
@@ -60,8 +62,8 @@ export class ProductsService {
     }
   }
 
-  findAll() {
-    return paginated<Product>(this.productRepository);
+  findAll(query) {
+    return paginated<Product>(this.productRepository, query);
   }
 
   async findOne(id: number) {
@@ -158,5 +160,13 @@ export class ProductsService {
     await this.productRepository.nativeDelete({ id: product.id });
 
     return { deleted: product.id };
+  }
+
+  async addToFavourite(productId: number, userId: number) {
+    const user = await this.userRepository.findOne({ id: userId });
+    const product = await this.productRepository.findOne({ id: productId });
+    user.favouriteProducts.add(product);
+
+    this.userRepository.persistAndFlush(user);
   }
 }
