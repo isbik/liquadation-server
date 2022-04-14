@@ -31,6 +31,15 @@ export class FavoritesService {
         'recommendedRetailPrice',
         'createdAt',
       ],
+      ...(query.productIds
+        ? {
+            where: {
+              id: {
+                $in: query.productIds.split(','),
+              },
+            },
+          }
+        : {}),
       ...query,
     });
 
@@ -51,21 +60,10 @@ export class FavoritesService {
     const count = await user.favouriteOrganizations.loadCount();
 
     const favoriteUsers = await user.favouriteOrganizations.matching({
-      fields: ['id', 'organizationName'],
+      fields: ['id', 'organizationName', 'avatar'],
       populate: ['avatar'],
       ...query,
     });
-
-    // const products = await this.productRepository.find(
-    //   {
-    //     id: {
-    //       $in: favoriteUsers.map(({ id }) => id),
-    //     },
-    //   },
-    //   {
-    //     groupBy: ['user.id'],
-    //   },
-    // );
 
     const qb = this.em.createQueryBuilder(Product);
 
