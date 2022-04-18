@@ -1,7 +1,7 @@
-import { paginated } from '@/lib/Paginated';
 import { EntityRepository, FindOneOptions } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { paginated } from '../../lib/Paginated';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -73,12 +73,10 @@ export class CategoriesService {
     return category;
   }
 
-  async findOne(id: number) {
-    const category = await this.findById(id, {
+  findOne(id: number) {
+    return this.findById(id, {
       populate: ['parentCategory', 'image'],
     });
-
-    return category;
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {

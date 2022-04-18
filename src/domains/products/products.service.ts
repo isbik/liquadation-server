@@ -1,7 +1,7 @@
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { paginated } from 'src/lib/Paginated';
+import { paginated } from '../../lib/Paginated';
 import { CategoriesService } from '../categories/categories.service';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 import { User } from '../users/entities/user.entity';

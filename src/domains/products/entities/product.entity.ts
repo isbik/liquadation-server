@@ -27,7 +27,7 @@ export enum UnitType {
 
 export enum Supplier {
   owner = 'owner',
-  tone = 'tone',
+  customer = 'customer',
 }
 
 @Entity()

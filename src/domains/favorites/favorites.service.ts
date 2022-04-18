@@ -67,14 +67,23 @@ export class FavoritesService {
 
     const qb = this.em.createQueryBuilder(Product);
 
-    const products = await qb
+    const countOrganizations = await qb
       .select('count(id)')
       .addSelect('owner')
       .where({ id: { $in: favoriteUsers.map(({ id }) => id) } })
       .groupBy('owner')
       .execute();
 
-    return { count, items: favoriteUsers, products };
+    const items = favoriteUsers.reduce((acc, cur) => {
+      acc.push({
+        ...cur,
+        countLots:
+          countOrganizations.find((count) => cur.id === count.owner.id) || 0,
+      });
+      return acc;
+    }, []);
+
+    return { count, items };
   }
 
   async addFavoriteOrganization(organizationId: number, userId: number) {

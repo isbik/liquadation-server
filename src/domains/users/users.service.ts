@@ -3,7 +3,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { paginated } from 'src/lib/Paginated';
+import { paginated } from '../../lib/Paginated';
 import { PasswordChangeDto } from '../authentication/dto/password-change.dto';
 import { EmailService } from '../email/email.service';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
@@ -134,7 +134,7 @@ export class UsersService {
   }
 
   async changeEmailStatus(data: ChangeUserStatusDto) {
-    data.ids.map((id) => {
+    data.ids.forEach((id) => {
       this.usersRepository.nativeUpdate({ id }, { emailStatus: data.status });
     });
 
