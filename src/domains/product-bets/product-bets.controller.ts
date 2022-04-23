@@ -26,7 +26,8 @@ export class ProductBetsController {
   }
 
   @Get()
-  findAll(@Query() query) {
-    return this.productBetsService.findAll(query);
+  @UseGuards(JwtAuthenticationGuard)
+  findAll(@Req() request: RequestWithUser, @Query() query) {
+    return this.productBetsService.findAll(request.user.id, query);
   }
 }

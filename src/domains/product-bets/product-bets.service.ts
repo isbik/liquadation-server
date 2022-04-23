@@ -2,7 +2,7 @@ import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Product, ProductStatus } from '../products/entities/product.entity';
+import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateProductBetDto } from './dto/create-product-bet.dto';
 import { ProductBet } from './entities/product-bet.entity';
@@ -28,6 +28,13 @@ export class ProductBetsService {
 
     if (!product) {
       throw new HttpException('Продукт не найден', HttpStatus.NOT_FOUND);
+    }
+
+    if (product.owner.id === user.id) {
+      throw new HttpException(
+        'Вы не можете делать ставку на свой продукт',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     if (new Date(product.finishAuctionAt).getTime() < Date.now()) {
@@ -80,53 +87,40 @@ export class ProductBetsService {
     return bets;
   }
 
-  async findAll(query) {
+  async findAll(userId, query) {
     const { limit = 5, offset = 0, type = 'incoming' } = query;
 
     if (type === 'incoming') {
-      const qb = this.em.createQueryBuilder(Product);
+      const qb = this.em.createQueryBuilder(ProductBet, 'b');
 
-      const activeProductsQuery = qb
-        .select('id')
-        .where({
-          finishAuctionAt: { $gt: new Date() },
-        })
-        .limit(limit)
-        .offset(offset)
-        .orWhere({
-          status: ProductStatus.sold,
-        });
-
-      const activeProducts = await activeProductsQuery.execute();
-      const total = await activeProductsQuery.getCount('id');
-
-      const qbProductBet = this.em.createQueryBuilder(ProductBet);
-
-      const bets = await qbProductBet
-        .select('*')
-        .where({ product: { $in: activeProducts.map(({ id }) => id) } })
-        .groupBy('id')
-        .limit(1)
+      const queryBets = qb
+        .select('distinct(product_id)')
+        .addSelect('b.*')
+        .join('b.owner', 'o')
+        .addSelect('o.fio')
+        .where({ owner: userId })
         .orderBy({ createdAt: -1 })
-        .getResultList();
+        .limit(limit)
+        .offset(offset);
 
-      const users = await this.userRepository.find(
+      const bets: { id; product: number; fio: string; bet: number }[] =
+        await queryBets.execute();
+
+      const total = await queryBets.count();
+
+      const products = await this.productRepository.find(
         {
-          id: { $in: bets.map(({ owner }) => owner.id) },
+          id: { $in: bets.map(({ product }) => product) },
         },
-        {
-          fields: ['id', 'fio'],
-        },
+        { fields: ['id', 'status'] },
       );
 
-      const items = activeProducts.map((product) => {
-        const bet = bets.find((bet) => Number(bet.product.id) === product.id);
-
-        if (!bet) return product;
-
+      const items = bets.map((bet) => {
         return {
-          ...product,
-          bet: { ...bet, owner: users.find(({ id }) => id === bet.owner.id) },
+          id: bet.id,
+          buyer: bet.fio,
+          count: bet.bet,
+          product: products.find(({ id }) => id === bet.product),
         };
       });
 

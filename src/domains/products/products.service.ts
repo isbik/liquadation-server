@@ -103,7 +103,7 @@ export class ProductsService {
         ...product,
         favoritesCount,
         viewsCount,
-        bet: { userId: bet.owner, count: bet.bet },
+        bet: bet ? { userId: bet.owner, count: bet.bet } : {},
       };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
