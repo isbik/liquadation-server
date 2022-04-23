@@ -1,4 +1,4 @@
-import { AdminGuard } from '@/shared/guards/jwt-authentication.guard.1';
+import { AdminGuard } from '@/shared/guards/admin.guard';
 import {
   Body,
   Controller,

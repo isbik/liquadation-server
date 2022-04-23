@@ -1,6 +1,6 @@
 import {
-  IsDefined,
   IsEmail,
+  IsOptional,
   IsString,
   Matches,
   MinLength,
@@ -8,18 +8,20 @@ import {
 
 export class CreateContactApplicationDto {
   @IsEmail()
+  @IsOptional()
   email: string;
 
-  @IsDefined()
+  @IsOptional()
   @Matches(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/, {
     message: 'Введите корректный номер',
   })
   phone: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(2)
   fio: string;
 
   @IsString()
+  @MinLength(10)
   comment: string;
 }

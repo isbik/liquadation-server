@@ -178,6 +178,16 @@
             "admin"
           ],
           "mappedType": "enum"
+        },
+        "partner_code": {
+          "name": "partner_code",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "null",
+          "mappedType": "string"
         }
       },
       "name": "user",
@@ -263,6 +273,71 @@
     },
     {
       "columns": {
+        "user_1_id": {
+          "name": "user_1_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "user_2_id": {
+          "name": "user_2_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        }
+      },
+      "name": "user_views",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "user_views_pkey",
+          "columnNames": [
+            "user_1_id",
+            "user_2_id"
+          ],
+          "composite": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "user_views_user_1_id_foreign": {
+          "constraintName": "user_views_user_1_id_foreign",
+          "columnNames": [
+            "user_1_id"
+          ],
+          "localTableName": "public.user_views",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.user",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "user_views_user_2_id_foreign": {
+          "constraintName": "user_views_user_2_id_foreign",
+          "columnNames": [
+            "user_2_id"
+          ],
+          "localTableName": "public.user_views",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.user",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        }
+      }
+    },
+    {
+      "columns": {
         "id": {
           "name": "id",
           "type": "serial",
@@ -287,7 +362,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "mappedType": "string"
         },
         "fio": {
@@ -296,7 +371,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "mappedType": "string"
         },
         "comment": {
@@ -427,6 +502,71 @@
             "id"
           ],
           "referencedTableName": "public.user",
+          "updateRule": "cascade"
+        }
+      }
+    },
+    {
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "cloud_file_id": {
+          "name": "cloud_file_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        }
+      },
+      "name": "user_avatar",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "user_avatar_pkey",
+          "columnNames": [
+            "user_id",
+            "cloud_file_id"
+          ],
+          "composite": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "user_avatar_user_id_foreign": {
+          "constraintName": "user_avatar_user_id_foreign",
+          "columnNames": [
+            "user_id"
+          ],
+          "localTableName": "public.user_avatar",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.user",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "user_avatar_cloud_file_id_foreign": {
+          "constraintName": "user_avatar_cloud_file_id_foreign",
+          "columnNames": [
+            "cloud_file_id"
+          ],
+          "localTableName": "public.user_avatar",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.cloud_file",
+          "deleteRule": "cascade",
           "updateRule": "cascade"
         }
       }
@@ -697,7 +837,7 @@
           "nullable": false,
           "enumItems": [
             "owner",
-            "tone"
+            "customer"
           ],
           "mappedType": "enum"
         },
@@ -720,6 +860,17 @@
           "length": 6,
           "mappedType": "datetime"
         },
+        "finish_auction_at": {
+          "name": "finish_auction_at",
+          "type": "timestamptz(0)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "default": "null",
+          "mappedType": "datetime"
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamptz(0)",
@@ -729,6 +880,22 @@
           "nullable": false,
           "length": 6,
           "mappedType": "datetime"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "'active'",
+          "enumItems": [
+            "draft",
+            "active",
+            "waiting",
+            "sold"
+          ],
+          "mappedType": "enum"
         }
       },
       "name": "product",
@@ -808,6 +975,96 @@
     },
     {
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(0)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "mappedType": "datetime"
+        },
+        "bet": {
+          "name": "bet",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        }
+      },
+      "name": "product_bet",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "product_bet_pkey",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "product_bet_owner_id_foreign": {
+          "constraintName": "product_bet_owner_id_foreign",
+          "columnNames": [
+            "owner_id"
+          ],
+          "localTableName": "public.product_bet",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.user",
+          "updateRule": "cascade"
+        },
+        "product_bet_product_id_foreign": {
+          "constraintName": "product_bet_product_id_foreign",
+          "columnNames": [
+            "product_id"
+          ],
+          "localTableName": "public.product_bet",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.product",
+          "updateRule": "cascade"
+        }
+      }
+    },
+    {
+      "columns": {
         "product_id": {
           "name": "product_id",
           "type": "int",
@@ -866,6 +1123,71 @@
             "id"
           ],
           "referencedTableName": "public.cloud_file",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        }
+      }
+    },
+    {
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        }
+      },
+      "name": "product_viewers",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "product_viewers_pkey",
+          "columnNames": [
+            "product_id",
+            "user_id"
+          ],
+          "composite": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "product_viewers_product_id_foreign": {
+          "constraintName": "product_viewers_product_id_foreign",
+          "columnNames": [
+            "product_id"
+          ],
+          "localTableName": "public.product_viewers",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.product",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "product_viewers_user_id_foreign": {
+          "constraintName": "product_viewers_user_id_foreign",
+          "columnNames": [
+            "user_id"
+          ],
+          "localTableName": "public.product_viewers",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.user",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         }

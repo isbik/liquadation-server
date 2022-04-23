@@ -1,3 +1,4 @@
+import { enumValues } from '@/lib';
 import {
   Collection,
   Entity,
@@ -28,6 +29,13 @@ export enum UnitType {
 export enum Supplier {
   owner = 'owner',
   customer = 'customer',
+}
+
+export enum ProductStatus {
+  draft = 'draft',
+  active = 'active',
+  waiting = 'waiting',
+  sold = 'sold',
 }
 
 @Entity()
@@ -113,9 +121,21 @@ export class Product {
   @Property()
   createdAt = new Date();
 
+  /* Дата завершения аукциона, по умолчанию 3 дня */
+  @Property({ default: null })
+  finishAuctionAt = new Date(Date.now() + 24 * 60 * 60 * 1000 * 3);
+
   @Property({ onUpdate: () => new Date() })
   updatedAt = new Date();
 
   @ManyToMany()
   viewers = new Collection<User>(this);
+
+  /* Статус продукта */
+  @Enum({
+    default: ProductStatus.active,
+    items: enumValues(ProductStatus),
+    nullable: true,
+  })
+  status = ProductStatus.active;
 }

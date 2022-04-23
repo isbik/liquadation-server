@@ -84,4 +84,10 @@ export class User {
 
   @ManyToMany({ nullable: true })
   avatar: CloudFile;
+
+  @Property({ nullable: true, default: null })
+  partnerCode: string;
+
+  @ManyToMany()
+  views = new Collection<User>(this);
 }

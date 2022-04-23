@@ -1,4 +1,4 @@
-import { IsDefined, Matches } from 'class-validator';
+import { IsDefined, IsEmail, Matches } from 'class-validator';
 
 export class CreateUserDto {
   @IsDefined()
@@ -53,6 +53,7 @@ export class CreateUserDto {
   directorPhone: string;
 
   @IsDefined()
+  @IsEmail()
   directorEmail: string;
 
   @IsDefined()

@@ -8,10 +8,10 @@ export class ContactApplication {
   @Property()
   email: string;
 
-  @Property()
+  @Property({ nullable: true })
   phone: string;
 
-  @Property()
+  @Property({ nullable: true })
   fio: string;
 
   @Property()

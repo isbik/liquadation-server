@@ -4,7 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class AdminGuard extends AuthGuard('jwt') {
-  handleRequest(err, user, info: Error) {
+  handleRequest(err, user) {
     if (user.role !== UserRole.admin) {
       throw new HttpException('Action not allowed', HttpStatus.FORBIDDEN);
     }

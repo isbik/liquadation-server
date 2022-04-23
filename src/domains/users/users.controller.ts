@@ -1,17 +1,20 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Query,
-  UseGuards,
   Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import JwtAuthenticationGuard from '../../shared/guards/jwt-authentication.guard';
+import RequestWithUser from '../authentication/request-with-user.interface';
+import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto } from './dto/get-user.dto';
-import JwtAuthenticationGuard from '../../shared/guards/jwt-authentication.guard';
-import { ChangeUserStatusDto } from './dto/change-user-status.dto';
+import { UpdateDirectorInfoDto } from './dto/update-director-info.dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
@@ -33,5 +36,14 @@ export class UsersController {
   @Patch('/change-status')
   changeUserStatus(@Body() changeUserStatusData: ChangeUserStatusDto) {
     return this.usersService.changeEmailStatus(changeUserStatusData);
+  }
+
+  @UseGuards(JwtAuthenticationGuard)
+  @Patch('/update-director-info')
+  updateDirectorInfo(
+    @Req() request: RequestWithUser,
+    @Body() data: UpdateDirectorInfoDto,
+  ) {
+    return this.usersService.updateDirectorInfo(request.user.id, data);
   }
 }

@@ -9,6 +9,7 @@ import { EmailService } from '../email/email.service';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto } from './dto/get-user.dto';
+import { UpdateDirectorInfoDto } from './dto/update-director-info.dto';
 import { User, UserEmailStatus } from './entities/user.entity';
 
 @Injectable()
@@ -69,7 +70,7 @@ export class UsersService {
 
     if (!isPasswordMatching) {
       throw new HttpException(
-        'Wrong credentials provided',
+        'Введенный пароль не совпадает с текущим',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -139,5 +140,11 @@ export class UsersService {
     });
 
     this.usersRepository.flush();
+  }
+
+  async updateDirectorInfo(userId: number, data: UpdateDirectorInfoDto) {
+    await this.usersRepository.nativeUpdate({ id: userId }, { ...data });
+
+    return 'Ok';
   }
 }
