@@ -9,4 +9,16 @@ export class GetUsersDto {
   @IsEnum(UserEmailStatus)
   @IsOptional()
   emailStatus: UserEmailStatus;
+
+  @IsOptional()
+  limit: number;
+
+  @IsOptional()
+  offset: number;
+
+  @IsOptional()
+  sortOrder: number;
+
+  @IsOptional()
+  sortBy: string;
 }

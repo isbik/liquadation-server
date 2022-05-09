@@ -2,6 +2,7 @@ import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Organizations } from "aws-sdk";
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -74,11 +75,12 @@ export class FavoritesService {
       .groupBy('owner')
       .execute();
 
-    const items = favoriteUsers.reduce((acc, cur) => {
+    const items = favoriteUsers.reduce((acc, organization) => {
       acc.push({
-        ...cur,
+        organizationName: organization.organizationName,
+        avatar: organization.avatar,
         countLots:
-          countOrganizations.find((count) => cur.id === count.owner.id) || 0,
+          countOrganizations.find((count) => organization.id === count.owner.id) || 0,
       });
       return acc;
     }, []);
@@ -88,11 +90,19 @@ export class FavoritesService {
 
   async addFavoriteOrganization(organizationId: number, userId: number) {
     const user = await this.userRepository.findOne({ id: userId });
+
     const organization = await this.userRepository.findOne({
       id: organizationId,
     });
 
-    if (user.id === organization.id) {
+    if (!organization) {
+      throw new HttpException(
+        'Организация не была найдена',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (userId === organization.id) {
       throw new HttpException('Not allow add myself', HttpStatus.BAD_REQUEST);
     }
 

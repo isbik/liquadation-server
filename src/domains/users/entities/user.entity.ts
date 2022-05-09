@@ -2,12 +2,14 @@ import { CloudFile } from '@/domains/cloud-storage/entities/cloud-file.entity';
 import { Product } from '@/domains/products/entities/product.entity';
 import {
   Collection,
+  Embedded,
   Entity,
   Enum,
   ManyToMany,
   PrimaryKey,
   Property,
 } from '@mikro-orm/core';
+import { UserSettings } from './user-settings.entity';
 
 export enum UserEmailStatus {
   active = 'active',
@@ -90,4 +92,10 @@ export class User {
 
   @ManyToMany()
   views = new Collection<User>(this);
+
+  @Embedded({ nullable: true })
+  settings: UserSettings;
+
+  @ManyToMany()
+  cartProducts = new Collection<Product>(this);
 }

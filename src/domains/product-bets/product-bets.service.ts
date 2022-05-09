@@ -19,11 +19,15 @@ export class ProductBetsService {
     private readonly em: EntityManager,
   ) {}
   async create(user: User, createProductBetDto: CreateProductBetDto) {
+    if (createProductBetDto.bet > 10e9) {
+      throw new HttpException('Слишком большая ставка', HttpStatus.BAD_REQUEST);
+    }
+
     const product = await this.productRepository.findOne(
       {
         id: createProductBetDto.productId,
       },
-      { fields: ['id'] },
+      { fields: ['id', 'owner'] },
     );
 
     if (!product) {
@@ -33,7 +37,7 @@ export class ProductBetsService {
     if (product.owner.id === user.id) {
       throw new HttpException(
         'Вы не можете делать ставку на свой продукт',
-        HttpStatus.NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -44,7 +48,16 @@ export class ProductBetsService {
       );
     }
 
-    const [foundBet] = await this.findLastMaxBet([product.id]);
+    let foundBet;
+
+    try {
+      [foundBet] = await this.findLastMaxBet([product.id]);
+    } catch (error) {
+      throw new HttpException(
+        'Ошибка при попытки найти ставку, попробуйте позже',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     if (foundBet) {
       if (foundBet.owner.id === user.id) {
@@ -70,7 +83,11 @@ export class ProductBetsService {
 
     await this.productBetsRepository.persistAndFlush(bet);
 
-    return bet;
+    return {
+      id: bet.id,
+      userId: bet.owner.id,
+      bet: bet.bet,
+    };
   }
 
   async findLastMaxBet(productIds: number[]) {
@@ -90,15 +107,16 @@ export class ProductBetsService {
   async findAll(userId, query) {
     const { limit = 5, offset = 0, type = 'incoming' } = query;
 
-    if (type === 'incoming') {
-      const qb = this.em.createQueryBuilder(ProductBet, 'b');
+    const qb = this.em.createQueryBuilder(ProductBet, 'b');
 
+    if (type === 'incoming') {
       const queryBets = qb
         .select('distinct(product_id)')
         .addSelect('b.*')
         .join('b.owner', 'o')
+        .join('b.product', 'p')
         .addSelect('o.fio')
-        .where({ owner: userId })
+        .where({ 'p.owner': userId })
         .orderBy({ createdAt: -1 })
         .limit(limit)
         .offset(offset);
@@ -112,7 +130,7 @@ export class ProductBetsService {
         {
           id: { $in: bets.map(({ product }) => product) },
         },
-        { fields: ['id', 'status'] },
+        { fields: ['id', 'status', 'name'] },
       );
 
       const items = bets.map((bet) => {
@@ -126,5 +144,56 @@ export class ProductBetsService {
 
       return { items, total };
     }
+
+    if (type === 'outgoing') {
+      const connection = this.em.getConnection();
+
+      const result: Array<Record<string, unknown>> = await connection.execute(
+        `
+        select * from product_bet pb
+        inner join (
+          select product_id, max(bet) as total from product_bet 
+          group by product_id
+          limit ?
+          offset ? 
+        ) a
+        on pb.product_id = a.product_id
+        where owner_id  = ?
+      `,
+        [limit, offset, userId],
+      );
+
+      const total: { count: number } = await connection.execute(
+        `
+        select count(*) from product_bet pb
+        inner join (
+          select product_id, max(bet) as total from product_bet 
+          group by product_id
+        ) a
+        on pb.product_id = a.product_id
+        where owner_id  = ?
+      `,
+        [userId],
+      );
+
+      const products = await this.productRepository.find(
+        {
+          id: { $in: result.map(({ product_id }) => Number(product_id)) },
+        },
+        { fields: ['id', 'finishAuctionAt', 'name'] },
+      );
+
+      const items = result.map((bet) => {
+        return {
+          id: bet.id,
+          count: bet.bet,
+          product: products.find(({ id }) => id === Number(bet.product_id)),
+        };
+      });
+
+      return { items, total };
+    }
+
+    throw new HttpException('type не был передан', HttpStatus.BAD_REQUEST);
   }
 }

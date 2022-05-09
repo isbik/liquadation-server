@@ -42,24 +42,18 @@ export class AuthenticationService {
   }
 
   public async getAuthenticatedUser(email: string, plainPassword: string) {
-    try {
-      const user = await this.usersService.findByPhoneOrEmail(email);
+    const user = await this.usersService.findByPhoneOrEmail(email);
 
-      if (!user) {
-        throw new HttpException(
-          'Wrong credentials provided',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      await this.verifyPassword(plainPassword, user.password);
-      user.password = undefined;
-      return user;
-    } catch (error) {
+    if (!user) {
       throw new HttpException(
-        'Wrong credentials provided',
+        'Пользователь не был найден',
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    await this.verifyPassword(plainPassword, user.password);
+
+    return user;
   }
 
   public async verifyPassword(plainPassword: string, hashedPassword: string) {
@@ -68,10 +62,7 @@ export class AuthenticationService {
       hashedPassword,
     );
     if (!isPasswordMatching) {
-      throw new HttpException(
-        'Wrong credentials provided',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Неверный пароль', HttpStatus.BAD_REQUEST);
     }
   }
 

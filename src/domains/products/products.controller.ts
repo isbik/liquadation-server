@@ -48,6 +48,11 @@ export class ProductsController {
     return this.productsService.findOne(id);
   }
 
+  @Get(':id/similar')
+  findSimilar(@Param('id') id: number) {
+    return this.productsService.findSimilar(id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthenticationGuard)
   update(@Param('id') id: number, @Body() updateProductDto: UpdateProductDto) {

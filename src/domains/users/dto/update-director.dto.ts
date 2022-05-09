@@ -1,6 +1,6 @@
 import { IsDefined, IsEmail, Matches } from 'class-validator';
 
-export class UpdateDirectorInfoDto {
+export class UpdateDirectorDto {
   @IsDefined()
   position: string;
 

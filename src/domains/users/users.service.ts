@@ -1,15 +1,15 @@
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, FilterQuery, FindOptions } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { paginated } from '../../lib/Paginated';
 import { PasswordChangeDto } from '../authentication/dto/password-change.dto';
 import { EmailService } from '../email/email.service';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto } from './dto/get-user.dto';
-import { UpdateDirectorInfoDto } from './dto/update-director-info.dto';
+import { UpdateDirectorDto } from './dto/update-director.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { User, UserEmailStatus } from './entities/user.entity';
 
 @Injectable()
@@ -21,18 +21,30 @@ export class UsersService {
   ) {}
 
   async find(filters: GetUsersDto) {
-    return paginated<User>(this.usersRepository, filters);
+    const { offset = 0, limit = 10 } = filters;
+
+    const options: FindOptions<User, never> = {};
+    const where: FilterQuery<User> = {};
+
+    if (filters.sortBy) {
+      options.orderBy = { [filters.sortBy]: filters.sortOrder };
+    }
+
+    const [items, total] = await this.usersRepository.findAndCount(where, {
+      offset,
+      limit,
+      ...options,
+    });
+
+    return { items, total };
   }
 
   async findByPhoneOrEmail(phoneOrEmail: string): Promise<User | null> {
     try {
-      const user = await this.usersRepository.findOne({
-        email: phoneOrEmail,
-      });
-      if (user) {
-        return user;
-      }
+      const user = await this.usersRepository.findOne({ email: phoneOrEmail });
+      if (user) return user;
     } catch (error) {
+      console.log('error: ', error);
       return null;
     }
   }
@@ -51,12 +63,11 @@ export class UsersService {
   async getById(id: number) {
     try {
       const user = await this.usersRepository.findOne({ id });
-      if (user) {
-        return user;
-      }
+
+      if (user) return user;
     } catch (error) {
       throw new HttpException(
-        'User with this id does not exist',
+        'Пользователь не был найден',
         HttpStatus.NOT_FOUND,
       );
     }
@@ -81,7 +92,7 @@ export class UsersService {
 
     if (!user) {
       throw new HttpException(
-        'User with this id does not exist',
+        'Пользователь не был найден',
         HttpStatus.NOT_FOUND,
       );
     }
@@ -142,8 +153,21 @@ export class UsersService {
     this.usersRepository.flush();
   }
 
-  async updateDirectorInfo(userId: number, data: UpdateDirectorInfoDto) {
+  async updateDirectorInfo(userId: number, data: UpdateDirectorDto) {
     await this.usersRepository.nativeUpdate({ id: userId }, { ...data });
+
+    return 'Ok';
+  }
+
+  async updateNotificationSettings(
+    userId: number,
+    data: UpdateNotificationDto,
+  ) {
+    const user = await this.usersRepository.findOne({ id: userId });
+
+    user.settings = data;
+
+    await this.usersRepository.persistAndFlush(user);
 
     return 'Ok';
   }

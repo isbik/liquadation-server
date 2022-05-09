@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
+  HttpStatus,
   Post,
   Query,
   Req,
@@ -12,6 +14,7 @@ import {
 import { Response } from 'express';
 import JwtAuthenticationGuard from '../../shared/guards/jwt-authentication.guard';
 import { LocalAuthenticationGuard } from '../../shared/guards/local-authentication.guard';
+import { UserEmailStatus } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { AuthenticationService } from './authentication.service';
 import { PasswordChangeDto } from './dto/password-change.dto';
@@ -43,9 +46,23 @@ export class AuthenticationController {
   @Post('login')
   async logIn(@Req() request: RequestWithUser, @Res() response: Response) {
     const { user } = request;
+
+    if (user.emailStatus === UserEmailStatus.verification) {
+      throw new HttpException(
+        'Ваш аккаунт ещё не был подтвержден',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    if (user.emailStatus === UserEmailStatus.blocked) {
+      throw new HttpException(
+        'Ваш аккаунт был заблокирован, обратитесь к администратору',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     const cookie = this.authenticationService.getCookieWithJwtToken(user.id);
     response.setHeader('Set-Cookie', cookie);
-    user.password = undefined;
     return response.send(user);
   }
 

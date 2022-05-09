@@ -1,11 +1,14 @@
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsPositive,
   IsString,
-  MaxLength,
 } from 'class-validator';
-import { Condition, Supplier, UnitType } from '../entities/product.entity';
+import { Supplier } from '../entities/product-delivery.entity';
+import { Condition, UnitType } from '../entities/product.entity';
 
 export class CreateProductDto {
   @IsString()
@@ -53,7 +56,9 @@ export class CreateProductDto {
   @IsEnum(Supplier)
   supplier: Supplier;
 
-  @MaxLength(8, { each: true })
+  @ArrayMinSize(1)
+  @ArrayMaxSize(8)
+  @IsNotEmpty()
   imageIds: number[];
 
   @IsOptional()

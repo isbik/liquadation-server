@@ -1,7 +1,11 @@
-import { EntityRepository, FindOneOptions } from '@mikro-orm/core';
+import {
+  EntityRepository,
+  FilterQuery,
+  FindOneOptions,
+  FindOptions,
+} from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { paginated } from '../../lib/Paginated';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -48,16 +52,27 @@ export class CategoriesService {
     return category;
   }
 
-  findAll(filters) {
-    const where = { ...filters };
+  async findAll(query) {
+    const { offset = 0, limit = 10 } = query || {};
+    const options: FindOptions<Category, 'image' | 'parentCategory'> = {};
+    const where: FilterQuery<Category> = {};
 
-    if (where.parentCategory === 'null') {
+    if (query.parentCategory === 'null') {
       where.parentCategory = null;
     }
 
-    return paginated<Category>(this.categoryRepository, where, {
+    if (query.orderBy) {
+      options.orderBy = { [query.orderBy]: query.orderSort };
+    }
+
+    const [items, total] = await this.categoryRepository.findAndCount(where, {
+      offset,
+      limit,
+      ...options,
       populate: ['parentCategory', 'image'],
     });
+
+    return { items, total };
   }
 
   async findById(
@@ -107,7 +122,10 @@ export class CategoriesService {
         updateCategoryDto.imageId,
       );
 
-      if (image.id !== category.image.id) {
+      if (category.image === null) {
+        category.image = image;
+        image.active = true;
+      } else if (image.id === category.image.id) {
         category.image.active = false;
         category.image = image;
       }

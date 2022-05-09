@@ -1,8 +1,10 @@
 import JwtAuthenticationGuard from '@/shared/guards/jwt-authentication.guard';
 import {
   Controller,
+  Delete,
   HttpException,
   HttpStatus,
+  Param,
   Post,
   Req,
   UploadedFile,
@@ -47,5 +49,11 @@ export class CloudStorageController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.cloudStorageService.uploadFile(file, request.user);
+  }
+
+  @Delete('delete/:id')
+  @UseGuards(JwtAuthenticationGuard)
+  deleteById(@Param('id') id: number) {
+    return this.cloudStorageService.deleteById(id);
   }
 }

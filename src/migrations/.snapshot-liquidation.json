@@ -188,6 +188,36 @@
           "nullable": true,
           "default": "null",
           "mappedType": "string"
+        },
+        "settings_is_send_news": {
+          "name": "settings_is_send_news",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "false",
+          "mappedType": "boolean"
+        },
+        "settings_is_send_new_bets": {
+          "name": "settings_is_send_new_bets",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "false",
+          "mappedType": "boolean"
+        },
+        "settings_is_send_new_competitor_bets": {
+          "name": "settings_is_send_new_competitor_bets",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "false",
+          "mappedType": "boolean"
         }
       },
       "name": "user",
@@ -335,6 +365,135 @@
           "updateRule": "cascade"
         }
       }
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "delivery_method": {
+          "name": "delivery_method",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "enumItems": [
+            "SDEK",
+            "RUSSIA_POST",
+            "PERSONAL_COURIER",
+            "PICKUP"
+          ],
+          "mappedType": "enum"
+        },
+        "delivery_size": {
+          "name": "delivery_size",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "enumItems": [
+            "BOX",
+            "PALLET",
+            "PALLET_SMALL",
+            "EUROPALLET",
+            "TRUCK_1_5",
+            "TRUCK_3_5",
+            "TRUCK_5",
+            "TRUCK_10",
+            "EUROFURA",
+            "CONTAINER_22",
+            "CONTAINER_26",
+            "CONTAINER_30"
+          ],
+          "mappedType": "enum"
+        },
+        "city": {
+          "name": "city",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "street": {
+          "name": "street",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "apartment": {
+          "name": "apartment",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "postal_code": {
+          "name": "postal_code",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "fio": {
+          "name": "fio",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        }
+      },
+      "name": "order",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "order_pkey",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {}
     },
     {
       "columns": {
@@ -828,19 +987,6 @@
           "nullable": true,
           "mappedType": "integer"
         },
-        "supplier": {
-          "name": "supplier",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "enumItems": [
-            "owner",
-            "customer"
-          ],
-          "mappedType": "enum"
-        },
         "auction_type": {
           "name": "auction_type",
           "type": "varchar(255)",
@@ -866,7 +1012,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "length": 6,
           "default": "null",
           "mappedType": "datetime"
@@ -892,7 +1038,7 @@
           "enumItems": [
             "draft",
             "active",
-            "waiting",
+            "finished",
             "sold"
           ],
           "mappedType": "enum"
@@ -1059,6 +1205,71 @@
             "id"
           ],
           "referencedTableName": "public.product",
+          "updateRule": "cascade"
+        }
+      }
+    },
+    {
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        }
+      },
+      "name": "order_products",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "order_products_pkey",
+          "columnNames": [
+            "order_id",
+            "product_id"
+          ],
+          "composite": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "order_products_order_id_foreign": {
+          "constraintName": "order_products_order_id_foreign",
+          "columnNames": [
+            "order_id"
+          ],
+          "localTableName": "public.order_products",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.order",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "order_products_product_id_foreign": {
+          "constraintName": "order_products_product_id_foreign",
+          "columnNames": [
+            "product_id"
+          ],
+          "localTableName": "public.order_products",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.product",
+          "deleteRule": "cascade",
           "updateRule": "cascade"
         }
       }
@@ -1249,6 +1460,71 @@
             "product_id"
           ],
           "localTableName": "public.user_favourite_products",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.product",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        }
+      }
+    },
+    {
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        }
+      },
+      "name": "user_cart_products",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "user_cart_products_pkey",
+          "columnNames": [
+            "user_id",
+            "product_id"
+          ],
+          "composite": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "user_cart_products_user_id_foreign": {
+          "constraintName": "user_cart_products_user_id_foreign",
+          "columnNames": [
+            "user_id"
+          ],
+          "localTableName": "public.user_cart_products",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.user",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "user_cart_products_product_id_foreign": {
+          "constraintName": "user_cart_products_product_id_foreign",
+          "columnNames": [
+            "product_id"
+          ],
+          "localTableName": "public.user_cart_products",
           "referencedColumnNames": [
             "id"
           ],

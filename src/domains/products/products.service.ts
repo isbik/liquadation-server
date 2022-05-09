@@ -1,9 +1,12 @@
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, FilterQuery, Loaded } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityManager } from '@mikro-orm/postgresql';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
 import { paginated } from '../../lib/Paginated';
 import { CategoriesService } from '../categories/categories.service';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
+import { ProductBet } from '../product-bets/entities/product-bet.entity';
 import { ProductBetsService } from '../product-bets/product-bets.service';
 import { User } from '../users/entities/user.entity';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -19,8 +22,11 @@ export class ProductsService {
 
     @InjectRepository(Product)
     private readonly productRepository: EntityRepository<Product>,
+    @InjectRepository(ProductBet)
+    private readonly productBetRepository: EntityRepository<ProductBet>,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
+    private readonly em: EntityManager,
   ) {}
 
   async create(createProductDto: CreateProductDto, user: User) {
@@ -61,13 +67,65 @@ export class ProductsService {
     return product;
   }
 
-  search(query) {
-    const where = {
-      ...query,
-      status: ProductStatus.active,
-    };
+  async search(query) {
+    const { offset = 0, limit = 10 } = query || {};
 
-    return paginated<Product>(this.productRepository, where);
+    const options: FilterQuery<Product> = { status: ProductStatus.active };
+
+    if (query.categoryId) options.category = query.categoryId;
+
+    if (query.name) options.name = { $like: query.name };
+
+    if (query.q) options.name = { $like: query.q };
+
+    const [products, total]: [
+      Loaded<Product & { bet?: unknown | null }, 'images'>[],
+      number,
+    ] = await this.productRepository.findAndCount(options, {
+      offset,
+      limit,
+      populate: ['images'],
+      fields: [
+        'name',
+        'id',
+        'minRate',
+        'images',
+        'auctionType',
+        'finishAuctionAt',
+        'location',
+        'owner',
+      ],
+    });
+
+    const connection = this.em.getConnection();
+
+    const bets: Array<Record<string, unknown>> = await connection.execute(
+      `
+      select b.product_id, b.owner_id, b.bet as count
+      from
+        product_bet as b
+      inner join (
+        select product_id, max(bet) as total from product_bet 
+        group by product_id
+      )  as a
+      on b.product_id = a.product_id and b.bet = a.total
+      where
+        b.product_id in (?)
+
+      group by
+        b.id
+      order by
+        b.created_at 
+    `,
+      [products.map(({ id }) => id)],
+    );
+
+    const items = products.map((product) => {
+      const bet = bets.find(({ product_id }) => product_id === product.id);
+      return { ...product, bet: bet || null };
+    });
+
+    return { items, total };
   }
 
   findAll(user_id, query) {
@@ -76,7 +134,29 @@ export class ProductsService {
       owner: user_id,
     };
 
-    return paginated<Product>(this.productRepository, where);
+    return paginated<Product>(this.productRepository, where, {
+      populate: ['images'],
+    });
+  }
+
+  async findSimilar(productId) {
+    const product = await this.productRepository.findOne({ id: productId });
+
+    if (!product) {
+      throw new HttpException('Товар не найден', HttpStatus.NOT_FOUND);
+    }
+
+    return this.productRepository.find(
+      {
+        category: product.category,
+        id: { $nin: [product.id] },
+        status: ProductStatus.active,
+      },
+      {
+        populate: ['images'],
+        limit: 4,
+      },
+    );
   }
 
   async findOne(id: number) {
@@ -209,5 +289,30 @@ export class ProductsService {
     user.favouriteProducts.add(product);
 
     this.userRepository.persistAndFlush(user);
+  }
+
+  /* Каждые 2 минуты обновлять все товары и если которые можно сделать завершенными */
+  @Interval(1000 * 2 * 60)
+  async updateExpiredAuctionProducts() {
+    const products = await this.productRepository.find({
+      finishAuctionAt: { $lt: new Date() },
+      status: ProductStatus.active,
+    });
+
+    for (const product of products) {
+      const [bet] = await this.productBetsService.findLastMaxBet([product.id]);
+
+      if (bet && bet.owner) {
+        const user = await this.userRepository.findOne({
+          id: Number(bet.owner),
+        });
+
+        if (user) await user.cartProducts.add(product);
+      }
+
+      product.status = ProductStatus.finished;
+    }
+
+    await this.productRepository.persistAndFlush(products);
   }
 }

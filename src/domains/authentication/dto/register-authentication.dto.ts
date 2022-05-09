@@ -1,4 +1,4 @@
-import { IsDefined, Matches } from 'class-validator';
+import { IsDefined, IsEmail, Matches } from 'class-validator';
 
 export class RegisterDto {
   @IsDefined()
@@ -38,6 +38,7 @@ export class RegisterDto {
   phone: string;
 
   @IsDefined()
+  @IsEmail()
   email: string;
 
   @IsDefined()
@@ -48,11 +49,12 @@ export class RegisterDto {
 
   @IsDefined()
   @Matches(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/, {
-    message: 'Введите корректный номер',
+    message: 'Введите корректный номер руководителя',
   })
   directorPhone: string;
 
   @IsDefined()
+  @IsEmail()
   directorEmail: string;
 
   @IsDefined()

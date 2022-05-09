@@ -13,7 +13,8 @@ import RequestWithUser from '../authentication/request-with-user.interface';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto } from './dto/get-user.dto';
-import { UpdateDirectorInfoDto } from './dto/update-director-info.dto';
+import { UpdateDirectorDto } from './dto/update-director.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -42,8 +43,17 @@ export class UsersController {
   @Patch('/update-director-info')
   updateDirectorInfo(
     @Req() request: RequestWithUser,
-    @Body() data: UpdateDirectorInfoDto,
+    @Body() data: UpdateDirectorDto,
   ) {
     return this.usersService.updateDirectorInfo(request.user.id, data);
+  }
+
+  @UseGuards(JwtAuthenticationGuard)
+  @Patch('/notification')
+  updateNotificationSettings(
+    @Req() request: RequestWithUser,
+    @Body() data: UpdateNotificationDto,
+  ) {
+    return this.usersService.updateNotificationSettings(request.user.id, data);
   }
 }

@@ -26,15 +26,12 @@ export enum UnitType {
   tone = 'tone',
 }
 
-export enum Supplier {
-  owner = 'owner',
-  customer = 'customer',
-}
+
 
 export enum ProductStatus {
   draft = 'draft',
   active = 'active',
-  waiting = 'waiting',
+  finished = 'finished',
   sold = 'sold',
 }
 
@@ -110,10 +107,6 @@ export class Product {
   @OneToOne({ nullable: true })
   manifesto: CloudFile;
 
-  /* Кто осуществляет доставку */
-  @Enum(() => Supplier)
-  supplier: Supplier;
-
   /* TODO Тип аукциона */
   @Property()
   auctionType = 'standard';
@@ -122,13 +115,13 @@ export class Product {
   createdAt = new Date();
 
   /* Дата завершения аукциона, по умолчанию 3 дня */
-  @Property({ default: null })
+  @Property({ default: null, nullable: true })
   finishAuctionAt = new Date(Date.now() + 24 * 60 * 60 * 1000 * 3);
 
   @Property({ onUpdate: () => new Date() })
   updatedAt = new Date();
 
-  @ManyToMany()
+  @ManyToMany({ hidden: true })
   viewers = new Collection<User>(this);
 
   /* Статус продукта */
