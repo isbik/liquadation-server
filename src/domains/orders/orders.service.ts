@@ -1,14 +1,19 @@
+import { IS_DEV } from '@/lib';
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityManager } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
+import { PicassoService } from '../picasso/picasso.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
 
 @Injectable()
 export class OrdersService {
   constructor(
+    private readonly picassoService: PicassoService,
     @InjectRepository(Order)
     private readonly orderRepository: EntityRepository<Order>,
+    private readonly em: EntityManager,
   ) {}
 
   async create(createOrderDto: CreateOrderDto) {
@@ -16,34 +21,56 @@ export class OrdersService {
 
     const order = this.orderRepository.create({
       ...data,
+      products: productIds,
     });
 
-    // const body = {
-    //   externalId: 'test 2',
-    //   amount: 100_000,
-    //   description: 'Оплата товара',
-    //   currency: 'RUB',
-    //   successUrl: 'https://mysite.com/successUrl',
-    //   failUrl: 'https://mysite.com/failUrl',
-    // };
+    //  Стоимость заказа без учета доставки
 
-    // const headers = {
-    //   'Content-Type': 'application/json',
-    //   'X-Api-Key': process.env.PICASSO_API_KEY,
-    //   'X-Sign': createHash('md5')
-    //     .update(JSON.stringify(body) + process.env.PICASSO_SECRET_PHRASE)
-    //     .digest('base64'),
-    // };
+    const connection = this.em.getConnection();
 
-    // const response = await fetch(this.URL, {
-    //   method: 'POST',
-    //   body: JSON.stringify(body),
-    //   headers,
-    // });
+    const bets: Array<Record<string, never>> = await connection.execute(
+      `
+      select b.product_id, b.owner_id, b.bet as count
+      from
+        product_bet as b
+      inner join (
+        select product_id, max(bet) as total from product_bet 
+        group by product_id
+      )  as a
+      on b.product_id = a.product_id and b.bet = a.total
+      where
+        b.product_id in (?)
 
-    // const data = await response.json();
+      group by
+        b.id
+      order by
+        b.created_at 
+    `,
+      [productIds],
+    );
 
-    // return data;
+    const amount: number = bets.reduce((acc, { count }) => acc + count, 0);
+
+    order.amount = amount;
+
+    await this.orderRepository.persistAndFlush(order);
+
+    const url = IS_DEV
+      ? `${process.env.FRONTEND_URL}/order/${order.id}`
+      : 'https://test.com';
+
+    const body = {
+      externalId: String(order.id),
+      amount,
+      description: 'Оплата товара',
+      currency: 'RUB',
+      successUrl: url,
+      failUrl: url,
+    };
+
+    const paymentData = await this.picassoService.createPayment(body);
+
+    return paymentData;
   }
 
   findAll() {

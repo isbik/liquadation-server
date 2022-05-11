@@ -377,6 +377,19 @@
           "nullable": false,
           "mappedType": "integer"
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "enumItems": [
+            "not_paid",
+            "paid"
+          ],
+          "mappedType": "enum"
+        },
         "delivery_method": {
           "name": "delivery_method",
           "type": "text",
@@ -477,6 +490,24 @@
           "primary": false,
           "nullable": false,
           "mappedType": "string"
+        },
+        "coupon": {
+          "name": "coupon",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "amount": {
+          "name": "amount",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
         }
       },
       "name": "order",

@@ -45,7 +45,7 @@ export class ProductsController {
   @UseGuards(OptionalJwtAuthGuard)
   findOne(@Req() request: RequestWithUser, @Param('id') id: number) {
     if (request.user.id) this.productsService.addViews(request.user.id, id);
-    return this.productsService.findOne(id);
+    return this.productsService.findOne(id, request?.user?.id);
   }
 
   @Get(':id/similar')

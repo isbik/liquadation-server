@@ -59,11 +59,15 @@ export class CategoriesService {
 
     if (query.parentCategory === 'null') {
       where.parentCategory = null;
+    } else if (query.parentCategory) {
+      where.parentCategory = query.parentCategory;
     }
 
     if (query.orderBy) {
       options.orderBy = { [query.orderBy]: query.orderSort };
     }
+
+    console.log(query);
 
     const [items, total] = await this.categoryRepository.findAndCount(where, {
       offset,

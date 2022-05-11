@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -33,18 +34,23 @@ export class CreateProductDto {
   condition: Condition;
 
   @IsPositive()
+  @Type(() => Number)
   price: number;
 
   @IsPositive()
+  @Type(() => Number)
   minRate: number;
 
   @IsPositive()
+  @Type(() => Number)
   recommendedRetailPrice: number;
 
   @IsPositive()
+  @Type(() => Number)
   quantity: number;
 
   @IsPositive()
+  @Type(() => Number)
   totalWeight: number;
 
   @IsEnum(UnitType)

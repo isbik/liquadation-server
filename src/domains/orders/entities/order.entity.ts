@@ -14,6 +14,7 @@ import {
 
 export enum OrderStatus {
   not_paid = 'not_paid',
+  in_progress = 'in_progress',
   paid = 'paid',
 }
 @Entity()
@@ -56,4 +57,7 @@ export class Order {
 
   @Property()
   coupon: string;
+
+  @Property()
+  amount: number;
 }

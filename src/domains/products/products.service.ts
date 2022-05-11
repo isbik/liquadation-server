@@ -78,6 +78,15 @@ export class ProductsService {
 
     if (query.q) options.name = { $like: query.q };
 
+    if (query.priceFrom) options.price = { $gt: query.priceFrom };
+
+    if (query.priceTo) options.price = { $lt: query.priceTo };
+
+    if (query.priceTo && query.priceFrom)
+      options.price = { $lt: query.priceTo, $gt: query.priceFrom };
+
+    if (query.condition) options.condition = { $in: query.condition };
+
     const [products, total]: [
       Loaded<Product & { bet?: unknown | null }, 'images'>[],
       number,
@@ -99,26 +108,25 @@ export class ProductsService {
 
     const connection = this.em.getConnection();
 
-    const bets: Array<Record<string, unknown>> = await connection.execute(
-      `
-      select b.product_id, b.owner_id, b.bet as count
-      from
+    let bets: Array<Record<string, unknown>> = [];
+
+    if (products.length !== 0) {
+      bets = await connection.execute(
+        `select b.product_id, b.owner_id, b.bet as count
+        from
         product_bet as b
-      inner join (
+        inner join (
         select product_id, max(bet) as total from product_bet 
         group by product_id
-      )  as a
+      ) as a
       on b.product_id = a.product_id and b.bet = a.total
-      where
-        b.product_id in (?)
-
-      group by
-        b.id
-      order by
-        b.created_at 
-    `,
-      [products.map(({ id }) => id)],
-    );
+      where b.product_id in (?)
+      group by b.id
+      order by b.created_at 
+      `,
+        [products.map(({ id }) => id)],
+      );
+    }
 
     const items = products.map((product) => {
       const bet = bets.find(({ product_id }) => product_id === product.id);
@@ -159,14 +167,28 @@ export class ProductsService {
     );
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userId?: number) {
     try {
       const product = await this.productRepository.findOne(
         { id },
         { populate: ['category', 'subCategory', 'images', 'manifesto'] },
       );
+
       if (!product) {
         throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+      }
+
+      let isFavorite = false;
+
+      if (userId) {
+        const user = await this.userRepository.findOne({ id: userId });
+        const product = (
+          await user.favouriteProducts.init({ where: { id } })
+        ).getIdentifiers();
+
+        if (product.length !== 0) {
+          isFavorite = true;
+        }
       }
 
       const viewsCount = await product.viewers.loadCount();
@@ -181,6 +203,7 @@ export class ProductsService {
 
       return {
         ...product,
+        isFavorite,
         favoritesCount,
         viewsCount,
         bet: bet ? { userId: bet.owner, count: bet.bet } : {},
