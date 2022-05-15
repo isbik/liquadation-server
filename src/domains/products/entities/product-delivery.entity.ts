@@ -29,13 +29,13 @@ export enum Supplier {
 
 @Embeddable()
 export class ProductDelivery {
-  @Enum(() => DeliveryMethod)
+  @Enum({ nullable: true, default: null })
   method: DeliveryMethod;
 
-  @Enum(() => DeliverySize)
+  @Enum({ nullable: true, default: null })
   size: DeliverySize;
 
   /* Кто осуществляет доставку */
-  @Enum(() => Supplier)
+  @Enum({ nullable: true, default: null })
   supplier: Supplier;
 }

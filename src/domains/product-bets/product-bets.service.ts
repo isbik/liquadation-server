@@ -158,7 +158,7 @@ export class ProductBetsService {
           offset ? 
         ) a
         on pb.product_id = a.product_id
-        where owner_id  = ?
+        where owner_id = ?
       `,
         [limit, offset, userId],
       );

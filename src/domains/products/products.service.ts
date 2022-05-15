@@ -1,4 +1,4 @@
-import { EntityRepository, FilterQuery, Loaded } from '@mikro-orm/core';
+import { EntityRepository, FilterQuery } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
@@ -6,6 +6,7 @@ import { Interval } from '@nestjs/schedule';
 import { paginated } from '../../lib/Paginated';
 import { CategoriesService } from '../categories/categories.service';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
+import { FavoritesService } from '../favorites/favorites.service';
 import { ProductBet } from '../product-bets/entities/product-bet.entity';
 import { ProductBetsService } from '../product-bets/product-bets.service';
 import { User } from '../users/entities/user.entity';
@@ -19,6 +20,7 @@ export class ProductsService {
     private readonly cloudStorageService: CloudStorageService,
     private readonly categoriesService: CategoriesService,
     private readonly productBetsService: ProductBetsService,
+    private readonly favoriteService: FavoritesService,
 
     @InjectRepository(Product)
     private readonly productRepository: EntityRepository<Product>,
@@ -31,6 +33,12 @@ export class ProductsService {
 
   async create(createProductDto: CreateProductDto, user: User) {
     const product = this.productRepository.create(createProductDto);
+
+    product.delivery = {
+      size: createProductDto.deliverySize,
+      method: createProductDto.deliveryMethod,
+      supplier: createProductDto.supplier,
+    };
 
     if (createProductDto.manifestoFileId) {
       const manifesto = await this.cloudStorageService.findById(
@@ -67,9 +75,7 @@ export class ProductsService {
     return product;
   }
 
-  async search(query) {
-    const { offset = 0, limit = 10 } = query || {};
-
+  async search({ limit = 0, offset = 0, ...query }, user?: User) {
     const options: FilterQuery<Product> = { status: ProductStatus.active };
 
     if (query.categoryId) options.category = query.categoryId;
@@ -78,62 +84,65 @@ export class ProductsService {
 
     if (query.q) options.name = { $like: query.q };
 
-    if (query.priceFrom) options.price = { $gt: query.priceFrom };
-
-    if (query.priceTo) options.price = { $lt: query.priceTo };
-
-    if (query.priceTo && query.priceFrom)
-      options.price = { $lt: query.priceTo, $gt: query.priceFrom };
-
     if (query.condition) options.condition = { $in: query.condition };
 
-    const [products, total]: [
-      Loaded<Product & { bet?: unknown | null }, 'images'>[],
-      number,
-    ] = await this.productRepository.findAndCount(options, {
-      offset,
-      limit,
-      populate: ['images'],
-      fields: [
-        'name',
-        'id',
-        'minRate',
-        'images',
-        'auctionType',
-        'finishAuctionAt',
-        'location',
-        'owner',
-      ],
-    });
+    const qb = this.em.createQueryBuilder(Product, 'p');
 
-    const connection = this.em.getConnection();
+    const selectQuery = qb
 
-    let bets: Array<Record<string, unknown>> = [];
+      .leftJoin('p.bets', 'pb')
+      .groupBy(['pb.product_id', 'p.id'])
+      .where(options);
 
-    if (products.length !== 0) {
-      bets = await connection.execute(
-        `select b.product_id, b.owner_id, b.bet as count
-        from
-        product_bet as b
-        inner join (
-        select product_id, max(bet) as total from product_bet 
-        group by product_id
-      ) as a
-      on b.product_id = a.product_id and b.bet = a.total
-      where b.product_id in (?)
-      group by b.id
-      order by b.created_at 
-      `,
-        [products.map(({ id }) => id)],
+    if (query.priceTo && query.priceFrom) {
+      selectQuery.having(
+        `coalesce(max(pb.bet), p.price) between ${query.priceFrom} and ${query.priceTo}`,
       );
+    } else if (query.priceFrom)
+      selectQuery.having(`coalesce(max(pb.bet), p.price) > ${query.priceFrom}`);
+    else if (query.priceTo)
+      selectQuery.having(`coalesce(max(pb.bet), p.price) < ${query.priceTo}`);
+
+    const { total } = (await selectQuery
+      .select(qb.raw('distinct count(*) over () as total'))
+      .execute('get')) as { total: string };
+
+    const products = await selectQuery
+      .select([
+        'p.name',
+        'p.id',
+        'p.price',
+        'p.auctionType',
+        'p.finishAuctionAt',
+        'p.owner',
+        'coalesce(max(pb.bet), p.price) as bet',
+      ])
+      .offset(offset)
+      .limit(limit)
+      .populate([{ field: 'image', all: true }]);
+
+    const favoriteProductIds =
+      await this.favoriteService.searchUserFavoriteProductIds(
+        products.map(({ id }) => id),
+        user,
+      );
+
+    for (const product of products) {
+      await product.images.init();
+      await product.images.loadItems();
     }
 
     const items = products.map((product) => {
-      const bet = bets.find(({ product_id }) => product_id === product.id);
-      return { ...product, bet: bet || null };
+      return {
+        ...product,
+        isFavorite: favoriteProductIds.includes(product.id),
+      };
     });
 
-    return { items, total };
+    return {
+      items,
+      total: Number(total),
+    };
   }
 
   findAll(user_id, query) {
@@ -147,14 +156,14 @@ export class ProductsService {
     });
   }
 
-  async findSimilar(productId) {
+  async findSimilar(productId, user?: User) {
     const product = await this.productRepository.findOne({ id: productId });
 
     if (!product) {
       throw new HttpException('Товар не найден', HttpStatus.NOT_FOUND);
     }
 
-    return this.productRepository.find(
+    const products = await this.productRepository.find(
       {
         category: product.category,
         id: { $nin: [product.id] },
@@ -165,13 +174,52 @@ export class ProductsService {
         limit: 4,
       },
     );
+
+    const favoriteProductIds =
+      await this.favoriteService.searchUserFavoriteProductIds(
+        products.map(({ id }) => id),
+        user,
+      );
+
+    const connection = this.em.getConnection();
+
+    let bets: Array<Record<string, unknown>> = [];
+
+    if (products.length !== 0) {
+      bets = await connection.execute(
+        `select b.product_id, b.owner_id, b.bet as count from product_bet as b
+        inner join (
+          select product_id, max(bet) as total from product_bet 
+          group by product_id
+        ) as a
+        on b.product_id = a.product_id and b.bet = a.total
+        where b.product_id in (?)
+        group by b.id
+        order by b.created_at 
+      `,
+        [products.map(({ id }) => id)],
+      );
+    }
+
+    const items = products.map((product) => {
+      const bet = bets.find(({ product_id }) => product_id === product.id);
+      return {
+        ...product,
+        isFavorite: favoriteProductIds.includes(product.id),
+        bet: bet || null,
+      };
+    });
+
+    return items;
   }
 
   async findOne(id: number, userId?: number) {
     try {
       const product = await this.productRepository.findOne(
         { id },
-        { populate: ['category', 'subCategory', 'images', 'manifesto'] },
+        {
+          populate: ['category', 'subCategory', 'images', 'manifesto'],
+        },
       );
 
       if (!product) {
@@ -209,6 +257,7 @@ export class ProductsService {
         bet: bet ? { userId: bet.owner, count: bet.bet } : {},
       };
     } catch (error) {
+      console.log('error: ', error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

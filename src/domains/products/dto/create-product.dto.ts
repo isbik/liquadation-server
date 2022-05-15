@@ -8,7 +8,7 @@ import {
   IsPositive,
   IsString,
 } from 'class-validator';
-import { Supplier } from '../entities/product-delivery.entity';
+import { DeliveryMethod, DeliverySize, Supplier } from '../entities/product-delivery.entity';
 import { Condition, UnitType } from '../entities/product.entity';
 
 export class CreateProductDto {
@@ -59,9 +59,6 @@ export class CreateProductDto {
   @IsString()
   location: string;
 
-  @IsEnum(Supplier)
-  supplier: Supplier;
-
   @ArrayMinSize(1)
   @ArrayMaxSize(8)
   @IsNotEmpty()
@@ -70,4 +67,13 @@ export class CreateProductDto {
   @IsOptional()
   @IsPositive()
   manifestoFileId: number;
+
+  @IsEnum(Supplier)
+  supplier: Supplier;
+
+  @IsEnum(DeliverySize)
+  deliverySize: DeliverySize;
+
+  @IsEnum(DeliveryMethod)
+  deliveryMethod: DeliveryMethod;
 }

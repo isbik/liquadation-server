@@ -1,10 +1,13 @@
+import { ProductBet } from '@/domains/product-bets/entities/product-bet.entity';
 import { enumValues } from '@/lib';
 import {
   Collection,
+  Embedded,
   Entity,
   Enum,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryKey,
   Property,
@@ -12,6 +15,7 @@ import {
 import { CloudFile } from 'src/domains/cloud-storage/entities/cloud-file.entity';
 import { User } from 'src/domains/users/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
+import { ProductDelivery } from './product-delivery.entity';
 
 export enum Condition {
   new = 'new',
@@ -25,8 +29,6 @@ export enum UnitType {
   kg = 'kg',
   tone = 'tone',
 }
-
-
 
 export enum ProductStatus {
   draft = 'draft',
@@ -131,4 +133,15 @@ export class Product {
     nullable: true,
   })
   status = ProductStatus.active;
+
+  @Embedded(() => ProductDelivery)
+  delivery!: ProductDelivery;
+
+  /* Ставки */
+  @OneToMany({
+    entity: () => ProductBet,
+    mappedBy: 'product',
+    orphanRemoval: true,
+  })
+  bets = new Collection<ProductBet>(this);
 }

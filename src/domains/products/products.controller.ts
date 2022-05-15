@@ -31,8 +31,9 @@ export class ProductsController {
   }
 
   @Get('/search')
-  search(@Query() query) {
-    return this.productsService.search(query);
+  @UseGuards(OptionalJwtAuthGuard)
+  search(@Req() request: RequestWithUser, @Query() query) {
+    return this.productsService.search(query, request?.user);
   }
 
   @Get()
@@ -49,8 +50,9 @@ export class ProductsController {
   }
 
   @Get(':id/similar')
-  findSimilar(@Param('id') id: number) {
-    return this.productsService.findSimilar(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  findSimilar(@Req() request: RequestWithUser, @Param('id') id: number) {
+    return this.productsService.findSimilar(id, request.user);
   }
 
   @Patch(':id')

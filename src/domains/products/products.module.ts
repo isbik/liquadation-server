@@ -4,6 +4,7 @@ import { CategoriesService } from '../categories/categories.service';
 import { Category } from '../categories/entities/category.entity';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 import { CloudFile } from '../cloud-storage/entities/cloud-file.entity';
+import { FavoritesService } from '../favorites/favorites.service';
 import { ProductBet } from '../product-bets/entities/product-bet.entity';
 import { ProductBetsService } from '../product-bets/product-bets.service';
 import { User } from '../users/entities/user.entity';
@@ -21,6 +22,7 @@ import { ProductsService } from './products.service';
     CloudStorageService,
     CategoriesService,
     ProductBetsService,
+    FavoritesService,
   ],
 })
 export class ProductsModule {}

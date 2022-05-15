@@ -22,7 +22,7 @@ export class AuthenticationService {
 
       if (user) {
         throw new HttpException(
-          'User with this email already exists',
+          'Данная почта уже используется',
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -61,8 +61,12 @@ export class AuthenticationService {
       plainPassword,
       hashedPassword,
     );
+
     if (!isPasswordMatching) {
-      throw new HttpException('Неверный пароль', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Неверный логин или пароль',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 

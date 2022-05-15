@@ -2,7 +2,6 @@ import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Organizations } from "aws-sdk";
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -16,22 +15,26 @@ export class FavoritesService {
     private readonly em: EntityManager,
   ) {}
 
+  async searchUserFavoriteProductIds(ids: number[], user?: User) {
+    if (ids.length === 0 || !user) return [];
+
+    const favoriteProducts = await user.favouriteProducts.init({
+      where: { id: { $in: ids } },
+    });
+
+    return favoriteProducts.getIdentifiers();
+  }
+
   async getFavoriteLots(userId: number, query) {
     const user = await this.userRepository.findOne({ id: userId });
 
+    await user.favouriteProducts.init();
+
     const count = await user.favouriteProducts.loadCount();
 
-    const favorites = await user.favouriteProducts.matching({
-      populate: ['category', 'images'],
-      fields: [
-        'id',
-        'name',
-        'images',
-        'quantity',
-        'price',
-        'recommendedRetailPrice',
-        'createdAt',
-      ],
+    const favorites = await user.favouriteProducts.getItems({
+      fields: ['id'],
+
       ...(query.productIds
         ? {
             where: {
@@ -44,13 +47,46 @@ export class FavoritesService {
       ...query,
     });
 
-    return { count, items: favorites };
+    const items = await this.productRepository.find(
+      {
+        id: { $in: favorites.map(({ id }) => id) },
+      },
+      {
+        populate: ['images'],
+        fields: [
+          'id',
+          'name',
+          'quantity',
+          'price',
+          'recommendedRetailPrice',
+          'createdAt',
+          'price',
+        ],
+      },
+    );
+
+    return {
+      count,
+      items,
+    };
   }
 
   async addFavouriteProduct(productId: number, userId: number) {
     const user = await this.userRepository.findOne({ id: userId });
     const product = await this.productRepository.findOne({ id: productId });
+
     user.favouriteProducts.add(product);
+
+    this.userRepository.persistAndFlush(user);
+  }
+
+  async removeFavouriteProduct(productId: number, userId: number) {
+    const user = await this.userRepository.findOne({ id: userId });
+    const product = await this.productRepository.findOne({ id: productId });
+
+    await user.favouriteProducts.init();
+
+    user.favouriteProducts.remove(product);
 
     this.userRepository.persistAndFlush(user);
   }
@@ -80,7 +116,9 @@ export class FavoritesService {
         organizationName: organization.organizationName,
         avatar: organization.avatar,
         countLots:
-          countOrganizations.find((count) => organization.id === count.owner.id) || 0,
+          countOrganizations.find(
+            (count) => organization.id === count.owner.id,
+          ) || 0,
       });
       return acc;
     }, []);

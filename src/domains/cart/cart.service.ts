@@ -44,17 +44,15 @@ export class CartService {
 
     if (products.length !== 0) {
       bets = await connection.execute(
-        `select b.product_id, b.owner_id, b.bet as count
-        from
-        product_bet as b
+        `select b.product_id, b.owner_id, b.bet as count from product_bet as b
         inner join (
         select product_id, max(bet) as total from product_bet 
         group by product_id
       ) as a
-      on b.product_id = a.product_id and b.bet = a.total
-      where b.product_id in (?)
-      group by b.id
-      order by b.created_at 
+        on b.product_id = a.product_id and b.bet = a.total
+        where b.product_id in (?)
+        group by b.id
+        order by b.created_at 
       `,
         [products.map(({ id }) => id)],
       );

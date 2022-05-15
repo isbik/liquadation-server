@@ -386,6 +386,7 @@
           "nullable": false,
           "enumItems": [
             "not_paid",
+            "in_progress",
             "paid"
           ],
           "mappedType": "enum"
@@ -1071,6 +1072,60 @@
             "active",
             "finished",
             "sold"
+          ],
+          "mappedType": "enum"
+        },
+        "delivery_method": {
+          "name": "delivery_method",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "null",
+          "enumItems": [
+            "SDEK",
+            "RUSSIA_POST",
+            "PERSONAL_COURIER",
+            "PICKUP"
+          ],
+          "mappedType": "enum"
+        },
+        "delivery_size": {
+          "name": "delivery_size",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "null",
+          "enumItems": [
+            "BOX",
+            "PALLET",
+            "PALLET_SMALL",
+            "EUROPALLET",
+            "TRUCK_1_5",
+            "TRUCK_3_5",
+            "TRUCK_5",
+            "TRUCK_10",
+            "EUROFURA",
+            "CONTAINER_22",
+            "CONTAINER_26",
+            "CONTAINER_30"
+          ],
+          "mappedType": "enum"
+        },
+        "delivery_supplier": {
+          "name": "delivery_supplier",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "default": "null",
+          "enumItems": [
+            "owner",
+            "customer"
           ],
           "mappedType": "enum"
         }

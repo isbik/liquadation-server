@@ -28,6 +28,15 @@ export class FavoritesController {
   }
 
   @UseGuards(JwtAuthenticationGuard)
+  @Put('/products/:id/remove')
+  removeProductToFavourite(
+    @Param('id') id: number,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.favoritesService.removeFavouriteProduct(id, request.user.id);
+  }
+
+  @UseGuards(JwtAuthenticationGuard)
   @Get('organizations')
   getFavoritesOrganizations(@Req() request: RequestWithUser, @Query() query) {
     return this.favoritesService.getFavoriteOrganizations(
