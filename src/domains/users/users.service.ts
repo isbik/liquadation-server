@@ -62,7 +62,10 @@ export class UsersService {
 
   async getById(id: number) {
     try {
-      const user = await this.usersRepository.findOne({ id });
+      const user = await this.usersRepository.findOne(
+        { id },
+        { populate: ['avatar'] },
+      );
 
       if (user) return user;
     } catch (error) {

@@ -89,9 +89,8 @@ export class ProductsService {
     const qb = this.em.createQueryBuilder(Product, 'p');
 
     const selectQuery = qb
-
       .leftJoin('p.bets', 'pb')
-      .groupBy(['pb.product_id', 'p.id'])
+      .groupBy(['pb.id', 'p.id'])
       .where(options);
 
     if (query.priceTo && query.priceFrom) {
@@ -99,13 +98,11 @@ export class ProductsService {
         `coalesce(max(pb.bet), p.price) between ${query.priceFrom} and ${query.priceTo}`,
       );
     } else if (query.priceFrom)
-      selectQuery.having(`coalesce(max(pb.bet), p.price) > ${query.priceFrom}`);
+      selectQuery.having(
+        `coalesce(max(pb.bet), p.price) >= ${query.priceFrom}`,
+      );
     else if (query.priceTo)
-      selectQuery.having(`coalesce(max(pb.bet), p.price) < ${query.priceTo}`);
-
-    const { total } = (await selectQuery
-      .select(qb.raw('distinct count(*) over () as total'))
-      .execute('get')) as { total: string };
+      selectQuery.having(`coalesce(max(pb.bet), p.price) <= ${query.priceTo}`);
 
     const products = await selectQuery
       .select([
@@ -115,11 +112,28 @@ export class ProductsService {
         'p.auctionType',
         'p.finishAuctionAt',
         'p.owner',
-        'coalesce(max(pb.bet), p.price) as bet',
       ])
+      .addSelect(['coalesce(max(pb.bet), p.price) as bet'])
       .offset(offset)
       .limit(limit)
-      .populate([{ field: 'image', all: true }]);
+      .populate([{ field: 'image', all: true }])
+      .getResultList();
+
+    if (products.length === 0) return { items: [], total: 0 };
+
+    const { total } = (await selectQuery
+      .select(qb.raw('distinct count(*) over () as total'))
+      .execute('get')) as { total: string };
+
+    const qbBets = this.em.createQueryBuilder(ProductBet, 'pb');
+
+    const bets: { product: number; count: number }[] = await qbBets
+      .select('pb.product_id, max(pb.bet) as count')
+      .where({
+        product: { $in: products.map(({ id }) => id) },
+      })
+      .groupBy('pb.product_id')
+      .execute();
 
     const favoriteProductIds =
       await this.favoriteService.searchUserFavoriteProductIds(
@@ -135,6 +149,9 @@ export class ProductsService {
     const items = products.map((product) => {
       return {
         ...product,
+        bet: bets.find((bet) => bet.product === product.id) || {
+          count: product.price,
+        },
         isFavorite: favoriteProductIds.includes(product.id),
       };
     });

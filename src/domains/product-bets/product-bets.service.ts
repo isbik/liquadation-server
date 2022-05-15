@@ -86,7 +86,7 @@ export class ProductBetsService {
     return {
       id: bet.id,
       userId: bet.owner.id,
-      bet: bet.bet,
+      count: bet.bet,
     };
   }
 

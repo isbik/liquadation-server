@@ -6,6 +6,7 @@ import {
   Entity,
   Enum,
   ManyToMany,
+  ManyToOne,
   PrimaryKey,
   Property,
 } from '@mikro-orm/core';
@@ -84,7 +85,7 @@ export class User {
   @ManyToMany()
   favouriteOrganizations = new Collection<User>(this);
 
-  @ManyToMany({ nullable: true })
+  @ManyToOne({ nullable: true })
   avatar: CloudFile;
 
   @Property({ nullable: true, default: null })
