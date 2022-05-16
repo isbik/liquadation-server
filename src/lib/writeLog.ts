@@ -8,7 +8,12 @@ export const writeToFile = (message) => {
     fs.mkdirSync(folder);
   }
 
-  const date = new Date().toLocaleDateString().split('.').reverse().join('');
+  const date = new Date()
+    .toLocaleDateString()
+    .split('.')
+    .reverse()
+    .join('')
+    .replace('/', '');
 
   fs.appendFileSync(
     `${folder}/` + date + '.log',
