@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import { EOL } from 'os';
 
 export const writeToFile = (message) => {
+  if (true) return;
+
   const folder = 'logs';
 
   if (!fs.existsSync(folder)) {
@@ -15,8 +17,6 @@ export const writeToFile = (message) => {
   if (!fs.existsSync(filePath)) {
     fs.mkdirSync(filePath);
   }
-
-  if (true) return;
 
   fs.appendFileSync(
     filePath + '.log',
