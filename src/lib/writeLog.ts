@@ -8,15 +8,16 @@ export const writeToFile = (message) => {
     fs.mkdirSync(folder);
   }
 
-  const date = new Date()
-    .toLocaleDateString()
-    .split('.')
-    .reverse()
-    .join('')
-    .replace('/', '');
+  const date = new Date().toLocaleDateString().split('.').reverse().join('');
+
+  const filePath = `${folder}/` + date;
+
+  if (!fs.existsSync(filePath)) {
+    fs.mkdirSync(filePath);
+  }
 
   fs.appendFileSync(
-    `${folder}/` + date + '.log',
+    filePath + '.log',
     new Date().toLocaleString() + ' - ' + message + EOL,
   );
 };
