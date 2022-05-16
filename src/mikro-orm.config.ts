@@ -7,7 +7,7 @@ const config: Options = {
   type: 'postgresql',
   host: 'localhost',
   port: 5432,
-  dbName: process.env.POSTGRES_DATABASE,
+  dbName: process.env.POSTGRES_DB,
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   entities: ['dist/**/*.entity.js'],
