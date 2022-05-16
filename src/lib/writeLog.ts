@@ -16,6 +16,8 @@ export const writeToFile = (message) => {
     fs.mkdirSync(filePath);
   }
 
+  if (true) return;
+
   fs.appendFileSync(
     filePath + '.log',
     new Date().toLocaleString() + ' - ' + message + EOL,
