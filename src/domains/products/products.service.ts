@@ -1,9 +1,9 @@
+import { paginated } from '@/lib';
 import { EntityRepository, FilterQuery } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { paginated } from '../../lib/Paginated';
 import { CategoriesService } from '../categories/categories.service';
 import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 import { FavoritesService } from '../favorites/favorites.service';

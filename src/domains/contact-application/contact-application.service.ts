@@ -1,7 +1,7 @@
+import { paginated } from '@/lib';
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { paginated } from '../../lib/Paginated';
 import { CreateContactApplicationDto } from './dto/create-contact-application.dto';
 import { ContactApplication } from './entities/contact-application.entity';
 
