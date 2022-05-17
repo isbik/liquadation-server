@@ -29,7 +29,12 @@ async function bootstrap() {
   app.enableCors({
     credentials: true,
     exposedHeaders: '*',
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://liquidationmarket.ru',
+      'https://liquidationmarket.ru',
+    ],
   });
 
   await app.listen(4200);
